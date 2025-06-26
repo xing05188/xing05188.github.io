@@ -107,7 +107,7 @@ footer {
 @media (max-width: 600px) {
   header h1 { font-size: 2rem; }
   main { padding: 0 0.3rem; }
-  .about, .contact { padding: 1rem 0.5rem; }
+  .tools, .about, .contact { padding: 1rem 0.5rem; }
 }
 body.dark {
   --main-bg: #21232a;
