@@ -91,6 +91,27 @@ main {
   margin: 0.5em 0 0 0;
   color: #333;
 }
+.tools {
+  margin: 2rem 0;
+}
+.tools button {
+  margin: 0.2rem 0.5rem 0.7rem 0;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 1.2rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.tools button:hover {
+  background: var(--accent);
+}
+.tools p {
+  font-size: 1.13rem;
+  color: var(--primary);
+}
 .about, .contact {
   background: var(--card-bg);
   border-radius: 10px;
