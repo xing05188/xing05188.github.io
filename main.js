@@ -33,6 +33,7 @@ window.showTime = function () {
   const now = new Date();
   document.getElementById('time').innerText = now.toLocaleString();
 }
+
 // 星空背景
 (function() {
   const canvas = document.createElement('canvas');
@@ -48,7 +49,7 @@ window.showTime = function () {
   }
   resize();
   window.addEventListener('resize', resize);
-  // 生成星星
+
   const STAR_NUM = 150;
   const stars = [];
   for (let i = 0; i < STAR_NUM; i++) {
@@ -72,7 +73,6 @@ window.showTime = function () {
       ctx.shadowBlur = 8;
       ctx.fill();
       ctx.restore();
-      // 星星缓慢移动
       star.x += star.speed;
       if(star.x > width) {
         star.x = 0;
@@ -107,7 +107,6 @@ window.showTime = function () {
     mouse.y = e.clientY;
   });
 
-  // 环绕粒子
   const PARTICLE_NUM = 18;
   let angleOffset = 0;
   let particleRadius = 68;
@@ -140,7 +139,6 @@ window.showTime = function () {
   const ctx = canvas.getContext('2d');
   let width = canvas.width, height = canvas.height;
 
-  // 鼠标位置归一化(-1~1)，决定嘴角弯曲
   let mouseX = 0.5, mouseY = 0.5;
   function updateMouse(e) {
     mouseX = Math.max(0, Math.min(1, e.clientX / window.innerWidth));
@@ -150,7 +148,6 @@ window.showTime = function () {
 
   function drawFace() {
     ctx.clearRect(0,0,width,height);
-    // 脸
     ctx.save();
     ctx.beginPath();
     ctx.arc(width/2, height/2, 52, 0, 2*Math.PI);
@@ -160,7 +157,6 @@ window.showTime = function () {
     ctx.fill();
     ctx.restore();
 
-    // 眼睛
     ctx.save();
     ctx.beginPath();
     ctx.arc(width/2-24, height/2-10, 8, 0, 2*Math.PI);
@@ -169,15 +165,13 @@ window.showTime = function () {
     ctx.fill();
     ctx.restore();
 
-    // 嘴巴（根据鼠标改变）
     ctx.save();
     ctx.strokeStyle = "#444";
     ctx.lineWidth = 4;
     ctx.lineCap = "round";
     ctx.beginPath();
-    // 嘴巴弧度：中间跟随mouseX, 笑高跟随mouseY
-    const smile = (mouseX-0.5)*40; // 左右嘴角
-    const smileH = 26 + (mouseY-0.5)*18; // 嘴高
+    const smile = (mouseX-0.5)*40;
+    const smileH = 26 + (mouseY-0.5)*18;
     ctx.moveTo(width/2-24, height/2+22);
     ctx.bezierCurveTo(
       width/2-12, height/2+smileH+smile/5,
