@@ -3,13 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <title>{{ page.title }} - {{ site.title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: #f9f9f9;
+      color: #222;
+      font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 740px;
+      margin: 50px auto 30px auto;
+      background: #fff;
+      box-shadow: 0 6px 36px 0 rgba(0,0,0,0.07);
+      border-radius: 10px;
+      padding: 40px 36px 36px 36px;
+    }
+    h1 {
+      font-size: 2.4em;
+      font-weight: bold;
+      margin: 0 0 15px 0;
+      color: #212121;
+      letter-spacing: 2px;
+      text-align: center;
+    }
+    .date {
+      color: #888;
+      font-size: 1em;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .content {
+      font-size: 1.15em;
+      color: #343434;
+    }
+    a {
+      display: inline-block;
+      margin-top: 40px;
+      color: #2196F3;
+      text-decoration: none;
+      border-bottom: 1px solid #2196F3;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background 0.2s, color 0.2s;
+    }
+    a:hover {
+      background: #2196F3;
+      color: #fff;
+      border-bottom: 1px solid #1976D2;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 18px 6vw 24px 6vw;
+        margin-top: 16px;
+      }
+      h1 {
+        font-size: 1.3em;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>{{ page.title }}</h1>
-  <p>{{ page.date | date: "%Y-%m-%d" }}</p>
-  <div>
-    {{ content }}
+  <div class="container">
+    <h1>{{ page.title }}</h1>
+    <div class="date">{{ page.date | date: "%Y-%m-%d" }}</div>
+    <div class="content">
+      {{ content }}
+    </div>
+    <a href="/">返回首页</a>
   </div>
-  <a href="/">返回首页</a>
 </body>
 </html>
