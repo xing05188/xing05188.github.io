@@ -144,5 +144,4 @@ body.dark {
   }
 }
 body, html { overflow-x: hidden; }
-/* 保证内容在画布之上 */
 body > *:not(canvas) { position: relative; z-index: 2; }
