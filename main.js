@@ -1,4 +1,4 @@
-// 夜间模式切换
+
 document.getElementById('toggle-dark').onclick = function() {
   document.body.classList.toggle('dark');
   if(document.body.classList.contains('dark')){
