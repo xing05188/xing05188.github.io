@@ -118,6 +118,7 @@ body.dark {
   --card-bg: #282a36;
   --shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
+
 /* 星空、粒子和笑脸相关样式 */
 #star-canvas, #particle-canvas {
   position: fixed;
