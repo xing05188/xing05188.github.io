@@ -2,12 +2,14 @@
 ---
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <title>星的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <header>
     <h1>星的博客</h1>
@@ -19,6 +21,19 @@
       <button id="toggle-dark">🌙</button>
     </nav>
   </header>
+  <div class="avatar-head-container">
+    <div class="avatar-head">
+      <div class="eye left">
+        <div class="pupil" id="left-pupil"></div>
+      </div>
+      <div class="eye right">
+        <div class="pupil" id="right-pupil"></div>
+      </div>
+      <div class="blush left"></div>
+      <div class="blush right"></div>
+      <div class="mouth" id="mouth"></div>
+    </div>
+  </div>
   <main>
     <section class="posts">
       {% for post in site.posts %}
@@ -47,4 +62,5 @@
   </main>
   <script src="main.js"></script>
 </body>
+
 </html>
