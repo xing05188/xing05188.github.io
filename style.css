@@ -64,6 +64,7 @@
 }
 
 .mouth {
+  position: relative;
   width: 56px; /* 原28px × 2 */
   height: 24px; /* 原12px × 2 */
   border-radius: 0 0 50% 50%;
