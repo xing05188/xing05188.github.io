@@ -53,7 +53,7 @@ document.addEventListener('mousemove', function (e) {
   const windowHeight = window.innerHeight;
   const normalizedY = e.clientY / windowHeight;
   const scale = 0.7 + normalizedY * 0.4;
-  mouth.style.width = `${28 * scale}px`;
-  mouth.style.height = `${12 * scale}px`;
+  mouth.style.width = `${56 * scale}px`;
+  mouth.style.height = `${24 * scale}px`;
 });
 
