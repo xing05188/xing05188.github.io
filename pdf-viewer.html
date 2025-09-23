@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF 阅读器</title>
+    <link rel="stylesheet" href="style.css"> <!-- 复用现有样式 -->
+    <style>
+        .pdf-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .pdf-header {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pdf-viewer {
+            width: 100%;
+            min-height: 80vh;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .pdf-list {
+            margin-top: 2rem;
+        }
+        .pdf-item {
+            padding: 0.8rem;
+            border-bottom: 1px solid #eee;
+            transition: background 0.3s;
+        }
+        .pdf-item:hover {
+            background: #f5f5f5;
+        }
+        .pdf-item a {
+            text-decoration: none;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- 可以复用你现有网站的导航栏 -->
+    <header>
+        <nav>
+            <a href="index.html">首页</a>
+            <a href="love.html">爱心页面</a>
+            <a href="ikun/index.html">小游戏</a>
+            <a href="pdf-viewer.html" class="active">PDF 阅读</a>
+        </nav>
+    </header>
+
+    <main class="pdf-container">
+        <div class="pdf-header">
+            <h1>PDF 阅读器</h1>
+        </div>
+
+        <!-- PDF 查看区域 -->
+        <div id="pdf-content">
+            <p>请从下方选择一个 PDF 文件进行阅读：</p>
+        </div>
+
+        <!-- PDF 文件列表 -->
+        <div class="pdf-list">
+            <h2>可用文档</h2>
+            <!-- 这里列出你的PDF文件，根据实际上传的文件修改 -->
+            <div class="pdf-item">
+                <a href="javascript:loadPdf('pdfs/example1.pdf')">示例文档 1</a>
+            </div>
+            <div class="pdf-item">
+                <a href="javascript:loadPdf('pdfs/report.pdf')">报告文档</a>
+            </div>
+            <!-- 添加更多PDF文件 -->
+        </div>
+    </main>
+
+    <script>
+        // 加载PDF文件的函数
+        function loadPdf(pdfUrl) {
+            const pdfContainer = document.getElementById('pdf-content');
+            
+            // 创建PDF查看器元素
+            const pdfViewer = document.createElement('embed');
+            pdfViewer.src = pdfUrl;
+            pdfViewer.type = 'application/pdf';
+            pdfViewer.className = 'pdf-viewer';
+            
+            // 清空容器并添加新的PDF查看器
+            pdfContainer.innerHTML = '';
+            pdfContainer.appendChild(pdfViewer);
+            
+            // 滚动到PDF查看器
+            pdfViewer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 支持URL参数直接打开特定PDF，例如：pdf-viewer.html?file=pdfs/example.pdf
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            const pdfFile = params.get('file');
+            if (pdfFile) {
+                loadPdf(pdfFile);
+            }
+        }
+    </script>
+</body>
+</html>
