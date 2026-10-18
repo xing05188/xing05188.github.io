@@ -1,78 +1,93 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <title>{{ page.title }} - {{ site.title }}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      background: #f9f9f9;
-      color: #222;
-      font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      margin: 0;
-      padding: 0;
-      line-height: 1.7;
-    }
-    .container {
-      max-width: 740px;
-      margin: 50px auto 30px auto;
-      background: #fff;
-      box-shadow: 0 6px 36px 0 rgba(0,0,0,0.07);
-      border-radius: 10px;
-      padding: 40px 36px 36px 36px;
-    }
-    h1 {
-      font-size: 2.4em;
-      font-weight: bold;
-      margin: 0 0 15px 0;
-      color: #212121;
-      letter-spacing: 2px;
-      text-align: center;
-    }
-    .date {
-      color: #888;
-      font-size: 1em;
-      text-align: center;
-      margin-bottom: 32px;
-    }
-    .content {
-      font-size: 1.15em;
-      color: #343434;
-    }
-    a {
-      display: inline-block;
-      margin-top: 40px;
-      color: #2196F3;
-      text-decoration: none;
-      border-bottom: 1px solid #2196F3;
-      padding: 2px 6px;
-      border-radius: 3px;
-      transition: background 0.2s, color 0.2s;
-    }
-    a:hover {
-      background: #2196F3;
-      color: #fff;
-      border-bottom: 1px solid #1976D2;
-    }
-    @media (max-width: 600px) {
-      .container {
-        padding: 18px 6vw 24px 6vw;
-        margin-top: 16px;
-      }
-      h1 {
-        font-size: 1.3em;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>{{ page.title }}</h1>
-    <div class="date">{{ page.date | date: "%Y-%m-%d" }}</div>
-    <div class="content">
-      {{ content }}
-    </div>
-    <a href="/">返回首页</a>
+---
+layout: default
+---
+
+{% assign chars = page.content | strip_html | strip_newlines | size %}
+{% assign read_min = chars | divided_by: 400 %}
+{% if read_min < 1 %}{% assign read_min = 1 %}{% endif %}
+
+<div class="wrap">
+  <div class="measure">
+    <article>
+
+      <header class="post-header">
+        <a class="crumb" href="{{ '/' | relative_url }}">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          返回首页
+        </a>
+
+        <h1 class="post-title">{{ page.title }}</h1>
+
+        <div class="post-meta">
+          <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%Y 年 %m 月 %d 日" }}</time>
+          <span class="sep">·</span>
+          <span>约 {{ read_min }} 分钟</span>
+          {% if page.categories.first %}
+          <span class="sep">·</span>
+          <span>{{ page.categories.first }}</span>
+          {% endif %}
+          {% if page.updated %}
+          <span class="sep">·</span>
+          <span>更新于 {{ page.updated | date: "%Y-%m-%d" }}</span>
+          {% endif %}
+        </div>
+      </header>
+
+      <div class="post-content">
+        {{ content }}
+      </div>
+
+      <footer class="post-footer">
+
+        {% if page.tags.first %}
+        <div class="post-tags" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px">
+          {% for t in page.tags %}
+          <a class="tag-mini" href="{{ '/tags/' | relative_url }}#{{ t | slugify }}">{{ t }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="post-nav">
+          {% if page.previous %}
+          <a href="{{ page.previous.url | relative_url }}">
+            <span class="pn-label">← 较新的一篇</span>
+            <span class="pn-title">{{ page.previous.title }}</span>
+          </a>
+          {% else %}
+          <div class="empty"></div>
+          {% endif %}
+
+          {% if page.next %}
+          <a class="is-next" href="{{ page.next.url | relative_url }}">
+            <span class="pn-label">较早的一篇 →</span>
+            <span class="pn-title">{{ page.next.title }}</span>
+          </a>
+          {% else %}
+          <div class="empty"></div>
+          {% endif %}
+        </div>
+
+        <!--
+          想开启评论（giscus，基于 GitHub Discussions，免费无广告）：
+          1. 在本仓库 Settings → Features 勾选 Discussions
+          2. 安装 https://github.com/apps/giscus
+          3. 在 https://giscus.app 生成你的 repo-id / category-id，替换下面两处后取消注释
+        <script src="https://giscus.app/client.js"
+          data-repo="{{ site.owner.github }}/{{ site.owner.github }}.github.io"
+          data-repo-id="YOUR_REPO_ID"
+          data-category="Announcements"
+          data-category-id="YOUR_CATEGORY_ID"
+          data-mapping="pathname"
+          data-theme="preferred_color_scheme"
+          data-lang="zh-CN"
+          crossorigin="anonymous" async>
+        </script>
+        -->
+      </footer>
+
+    </article>
   </div>
-</body>
-</html>
+</div>
+
+<!-- 目录（由 main.js 生成） -->
+<nav class="toc" aria-label="文章目录"></nav>

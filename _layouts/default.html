@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: 'zh-CN' }}">
+<head>
+  {% include head.html %}
+</head>
+<body>
+
+  <a class="skip-link" href="#main" style="position:absolute;left:-9999px">跳到主要内容</a>
+
+  {% include header.html %}
+
+  <main id="main">
+    {{ content }}
+  </main>
+
+  {% include footer.html %}
+
+  <script src="{{ '/assets/js/main.js' | relative_url }}" defer></script>
+</body>
+</html>

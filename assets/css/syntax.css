@@ -1,0 +1,168 @@
+/* ============================================================
+   代码高亮配色（配合 Jekyll / Rouge / Pygments 类名）
+   亮色参考 GitHub Light，暗色参考 GitHub Dark
+   ============================================================ */
+
+.highlight {
+  position: relative;
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+}
+.highlight pre {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* 语言标签（由 main.js 注入） */
+.code-lang {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  opacity: .75;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- 亮色主题 ---------- */
+.highlight { color: #24292f; }
+.highlight .c,   /* 注释 */
+.highlight .c1,
+.highlight .cm,
+.highlight .cs { color: #6e7781; font-style: italic; }
+
+.highlight .cp { color: #8250df; font-style: normal; }
+
+.highlight .k,   /* 关键字 */
+.highlight .kd,
+.highlight .kn,
+.highlight .kp,
+.highlight .kr,
+.highlight .kt,
+.highlight .o,
+.highlight .ow { color: #cf222e; }
+
+.highlight .s,   /* 字符串 */
+.highlight .s1,
+.highlight .s2,
+.highlight .sb,
+.highlight .sc,
+.highlight .sd,
+.highlight .se,
+.highlight .sh,
+.highlight .si,
+.highlight .sx,
+.highlight .ss,
+.highlight .sr,
+.highlight .dl { color: #0a3069; }
+
+.highlight .m,   /* 数字 */
+.highlight .mb,
+.highlight .mf,
+.highlight .mh,
+.highlight .mi,
+.highlight .mo,
+.highlight .il { color: #0550ae; }
+
+.highlight .n,   /* 名称 */
+.highlight .py,
+.highlight .nv,
+.highlight .vc,
+.highlight .vg,
+.highlight .vi,
+.highlight .vm { color: #24292f; }
+
+.highlight .nb,  /* 内建 */
+.highlight .bp { color: #005cc5; }
+
+.highlight .nf,  /* 函数 */
+.highlight .fm { color: #8250df; }
+
+.highlight .nc,  /* 类 */
+.highlight .nn { color: #953800; }
+
+.highlight .nd,  /* 装饰器 */
+.highlight .na,
+.highlight .nc .nf { color: #8250df; }
+
+.highlight .nt { color: #116329; }   /* 标签名 */
+.highlight .nl { color: #953800; }
+.highlight .ne { color: #953800; font-weight: 600; }
+.highlight .ni { color: #0550ae; }
+.highlight .p { color: #24292f; }
+.highlight .err { color: #cf222e; background: #ffebe9; border-radius: 3px; }
+.highlight .gd { color: #82071e; background: #ffebe9; }   /* 删除 */
+.highlight .gi { color: #116329; background: #dafbe1; }   /* 新增 */
+.highlight .gh { color: #0550ae; font-weight: 600; }
+.highlight .gu { color: #0550ae; font-weight: 600; }
+.highlight .gs { font-weight: 600; }
+.highlight .ge { font-style: italic; }
+.highlight .w  { color: #6e7781; }
+
+/* ---------- 暗色主题 ---------- */
+[data-theme="dark"] .highlight { color: #c9d1d9; }
+[data-theme="dark"] .highlight .c,
+[data-theme="dark"] .highlight .c1,
+[data-theme="dark"] .highlight .cm,
+[data-theme="dark"] .highlight .cs { color: #8b949e; }
+
+[data-theme="dark"] .highlight .cp { color: #d2a8ff; }
+
+[data-theme="dark"] .highlight .k,
+[data-theme="dark"] .highlight .kd,
+[data-theme="dark"] .highlight .kn,
+[data-theme="dark"] .highlight .kp,
+[data-theme="dark"] .highlight .kr,
+[data-theme="dark"] .highlight .kt,
+[data-theme="dark"] .highlight .o,
+[data-theme="dark"] .highlight .ow { color: #ff7b72; }
+
+[data-theme="dark"] .highlight .s,
+[data-theme="dark"] .highlight .s1,
+[data-theme="dark"] .highlight .s2,
+[data-theme="dark"] .highlight .sb,
+[data-theme="dark"] .highlight .sc,
+[data-theme="dark"] .highlight .sd,
+[data-theme="dark"] .highlight .se,
+[data-theme="dark"] .highlight .sh,
+[data-theme="dark"] .highlight .si,
+[data-theme="dark"] .highlight .sx,
+[data-theme="dark"] .highlight .ss,
+[data-theme="dark"] .highlight .sr,
+[data-theme="dark"] .highlight .dl { color: #a5d6ff; }
+
+[data-theme="dark"] .highlight .m,
+[data-theme="dark"] .highlight .mb,
+[data-theme="dark"] .highlight .mf,
+[data-theme="dark"] .highlight .mh,
+[data-theme="dark"] .highlight .mi,
+[data-theme="dark"] .highlight .mo,
+[data-theme="dark"] .highlight .il { color: #79c0ff; }
+
+[data-theme="dark"] .highlight .nb,
+[data-theme="dark"] .highlight .bp { color: #79c0ff; }
+
+[data-theme="dark"] .highlight .nf,
+[data-theme="dark"] .highlight .fm,
+[data-theme="dark"] .highlight .nd,
+[data-theme="dark"] .highlight .na { color: #d2a8ff; }
+
+[data-theme="dark"] .highlight .nc,
+[data-theme="dark"] .highlight .nn,
+[data-theme="dark"] .highlight .nl,
+[data-theme="dark"] .highlight .ne { color: #ffa657; }
+
+[data-theme="dark"] .highlight .nt { color: #7ee787; }
+[data-theme="dark"] .highlight .ni { color: #79c0ff; }
+[data-theme="dark"] .highlight .p { color: #c9d1d9; }
+[data-theme="dark"] .highlight .err { color: #ff7b72; background: rgba(248, 81, 73, .12); }
+[data-theme="dark"] .highlight .gd { color: #ffdcd7; background: rgba(248, 81, 73, .18); }
+[data-theme="dark"] .highlight .gi { color: #aff5b4; background: rgba(46, 160, 67, .18); }
+[data-theme="dark"] .highlight .gh,
+[data-theme="dark"] .highlight .gu { color: #79c0ff; }
+[data-theme="dark"] .highlight .w  { color: #6e7681; }

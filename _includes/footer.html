@@ -1,0 +1,19 @@
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div class="footer-copy">
+      &copy; {{ 'now' | date: "%Y" }} {{ site.title }} · {{ site.tagline }} · 由
+      <a href="https://jekyllrb.com/" target="_blank" rel="noopener">Jekyll</a> 与 GitHub Pages 驱动
+    </div>
+    <div class="footer-links">
+      <a href="{{ '/feed.xml' | relative_url }}">RSS</a>
+      <a href="{{ '/archive/' | relative_url }}">归档</a>
+      <a href="{{ '/tags/' | relative_url }}">标签</a>
+      <a href="https://github.com/{{ site.owner.github }}" target="_blank" rel="noopener">GitHub</a>
+      <a href="{{ '/lab/' | relative_url }}">实验室</a>
+    </div>
+  </div>
+</footer>
+
+<button class="to-top" type="button" aria-label="返回顶部">
+  <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>

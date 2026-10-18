@@ -1,0 +1,70 @@
+---
+layout: default
+---
+
+<!-- ===================== Hero ===================== -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-inner">
+      <h1>一半写给代码，<br>一半写给自己。</h1>
+      <p class="lead">
+        你好，我是{{ site.owner.name }}，{{ site.owner.bio }}
+        这里存放我的技术笔记、读书摘抄和生活碎片 —— 写得慢，但会一直写下去。
+      </p>
+      <div class="hero-meta">
+        <span>{{ site.owner.location }}</span>
+        <span class="dot">·</span>
+        <span>{{ site.posts.size }} 篇文章</span>
+        <span class="dot">·</span>
+        <span>{{ site.tags.size }} 个标签</span>
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ '/archive/' | relative_url }}">
+          开始阅读
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="{{ '/about/' | relative_url }}">关于我</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 文章列表 ===================== -->
+<div class="wrap">
+  <div class="layout">
+    <div class="content-col">
+      <div class="section-head">
+        <h2>最新文章</h2>
+        <span class="count">共 {{ site.posts.size }} 篇</span>
+      </div>
+
+      <div class="post-list">
+        {% for post in site.posts limit: site.home_posts_limit %}
+        <a class="post-card" href="{{ post.url | relative_url }}">
+          <div class="pc-meta">
+            <time class="pc-date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y 年 %m 月 %d 日" }}</time>
+            {% if post.categories.first %}
+            <span class="pc-cat">{{ post.categories.first }}</span>
+            {% endif %}
+          </div>
+          <h3>{{ post.title }}</h3>
+          <p class="pc-excerpt">{{ post.excerpt | strip_html | strip_newlines | truncate: 96 }}</p>
+          {% if post.tags.first %}
+          <div class="pc-tags">
+            {% for t in post.tags limit: 3 %}<span class="tag-mini">{{ t }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+
+      {% if site.posts.size == 0 %}
+      <div style="padding:40px 0;color:var(--text-mute)">
+        还没有文章。在 <code>_posts/</code> 目录里新建一个 <code>2026-01-01-hello.md</code> 就能看到效果。
+      </div>
+      {% endif %}
+    </div>
+
+    {% include sidebar.html %}
+  </div>
+</div>

@@ -1,0 +1,41 @@
+---
+layout: page
+title: 标签
+description: 按主题浏览全部文章
+permalink: /tags/
+---
+
+{% assign tag_names = "" | split: "," %}
+{% for tag in site.tags %}{% assign tag_names = tag_names | push: tag[0] %}{% endfor %}
+{% assign tag_names = tag_names | sort %}
+
+{% if tag_names.size == 0 %}
+<p style="color:var(--text-mute)">还没有标签。</p>
+{% endif %}
+
+{% for tag_name in tag_names %}
+  {% assign tag_id = tag_name | downcase | replace: " ", "-" %}
+  <div class="tag-section" id="{{ tag_id }}">
+    <h2>
+      <a href="#{{ tag_id }}" style="color:inherit">{{ tag_name }}</a>
+      <span class="pill">{{ site.tags[tag_name].size }} 篇</span>
+    </h2>
+
+    <div class="post-list">
+      {% for post in site.tags[tag_name] %}
+      <a class="post-card" href="{{ post.url | relative_url }}">
+        <div class="pc-meta">
+          <time class="pc-date">{{ post.date | date: "%Y-%m-%d" }}</time>
+          {% if post.categories.first %}<span class="pc-cat">{{ post.categories.first }}</span>{% endif %}
+        </div>
+        <h3>{{ post.title }}</h3>
+        <p class="pc-excerpt">{{ post.excerpt | strip_html | strip_newlines | truncate: 90 }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}
+
+<div style="margin-top:20px;font-size:.9rem;color:var(--text-mute)">
+  <a href="{{ '/archive/' | relative_url }}">按时间浏览 →</a>
+</div>

@@ -1,3 +1,66 @@
-theme: minima
-title: 我的博客
-description: 欢迎来到我的个人博客！
+# ============================================================
+#  星记 · 站点配置
+#  技术栈：Jekyll + GitHub Pages（零插件依赖）
+#  写新文章：在 _posts/ 下新建 2026-01-01-title.md 即可
+# ============================================================
+
+# ---------- 站点信息 ----------
+title: 星记
+tagline: 记录、分享与成长
+description: 星的个人博客 —— 一半写给代码，一半写给自己。
+author: 星
+email: 2351289@tongji.edu.cn
+
+url: "https://xing05188.github.io"
+baseurl: ""
+timezone: Asia/Shanghai
+encoding: utf-8
+lang: zh-CN
+
+# ---------- 作者 / 关于页 ----------
+owner:
+  name: 星
+  bio: 同济大学计算机专业在读。写代码，也写生活；偶尔拍照，常常散步。这里存放我的技术笔记与生活碎片。
+  location: 上海
+  github: xing05188
+  email: 2351289@tongji.edu.cn
+
+# ---------- 导航 ----------
+nav:
+  - { name: 首页, url: "/" }
+  - { name: 归档, url: "/archive/" }
+  - { name: 标签, url: "/tags/" }
+  - { name: 关于, url: "/about/" }
+
+# ---------- 文章链接格式 ----------
+permalink: /posts/:title/
+
+# ---------- Markdown 渲染 ----------
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  auto_ids: true
+  toc_levels: 2..3
+  syntax_highlighter: rouge
+
+# ---------- 默认值 ----------
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      comments: true
+
+# ---------- 构建排除 ----------
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - vendor
+  - .codebuddy
+  - .gitignore
+
+# ---------- 首页文章展示上限 ----------
+home_posts_limit: 20

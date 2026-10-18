@@ -1,0 +1,57 @@
+---
+layout: page
+title: 实验室
+description: 一些闲置但好玩的小页面
+permalink: /lab/
+---
+
+这里是一些"没什么用但挺好玩"的页面，从老站点搬过来的，留着做个纪念。
+
+<div class="lab-grid">
+  <a class="lab-card" href="{{ '/lab/love.html' | relative_url }}">
+    <div class="lc-icon">♥</div>
+    <h3>爱心动画</h3>
+    <p>Canvas 粒子组成的爱心，会一直跳动。一个小彩蛋。</p>
+  </a>
+
+  <a class="lab-card" href="{{ '/lab/pdf-viewer.html' | relative_url }}">
+    <div class="lc-icon">▤</div>
+    <h3>PDF 阅读器</h3>
+    <p>在浏览器里直接翻 PDF 的小页面，不用下载。</p>
+  </a>
+</div>
+
+<p style="margin-top:30px;font-size:.9rem;color:var(--text-mute)">
+  <a href="{{ '/' | relative_url }}">← 回到首页</a>
+</p>
+
+<style>
+  .lab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    margin-top: 26px;
+  }
+  .lab-card {
+    display: block;
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    color: var(--text);
+    transition: all .24s var(--ease);
+  }
+  .lab-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+  .lab-card .lc-icon {
+    font-size: 1.5rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .lab-card h3 { font-size: 1.04rem; margin-bottom: 6px; }
+  .lab-card:hover h3 { color: var(--accent); }
+  .lab-card p { font-size: .9rem; color: var(--text-soft); margin: 0; line-height: 1.65; }
+</style>

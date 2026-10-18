@@ -1,0 +1,35 @@
+<div class="progress-bar"></div>
+
+<header class="site-header">
+  <div class="wrap">
+    <nav class="nav" aria-label="主导航">
+      <a class="brand" href="{{ '/' | relative_url }}">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2.2l2.86 6.06 6.64.72-4.97 4.44 1.41 6.53L12 16.66l-5.94 3.29 1.41-6.53L2.5 8.98l6.64-.72z"/></svg>
+        </span>
+        <span>{{ site.title }}</span>
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        {% for item in site.nav %}
+        <li><a href="{{ item.url | relative_url }}">{{ item.name }}</a></li>
+        {% endfor %}
+      </ul>
+
+      <div class="nav-tools">
+        <a class="icon-btn" href="{{ '/search/' | relative_url }}" aria-label="搜索" title="搜索（按 / 键）">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </a>
+
+        <button class="icon-btn theme-toggle" type="button" aria-label="切换主题">
+          <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.8 6.8 0 0 0 9.8 9.8z"/></svg>
+          <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></svg>
+        </button>
+
+        <button class="icon-btn menu-btn" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="nav-links">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </nav>
+  </div>
+</header>

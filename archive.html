@@ -1,0 +1,32 @@
+---
+layout: page
+title: 归档
+description: 按时间倒序排列的全部文章
+permalink: /archive/
+---
+
+{% assign posts_by_year = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+
+{% if site.posts.size == 0 %}
+<p style="color:var(--text-mute)">还没有文章。</p>
+{% endif %}
+
+{% for year in posts_by_year %}
+<div class="year-group" id="{{ year.name }}">
+  <div class="year-label">{{ year.name }}</div>
+
+  {% for post in year.items %}
+  <a class="archive-row" href="{{ post.url | relative_url }}">
+    <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%m-%d" }}</time>
+    <span class="ar-title">{{ post.title }}</span>
+    {% if post.categories.first %}<span class="ar-cat">{{ post.categories.first }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% endfor %}
+
+<div style="margin-top:30px;font-size:.9rem;color:var(--text-mute)">
+  共 {{ site.posts.size }} 篇 ·
+  <a href="{{ '/tags/' | relative_url }}">按标签浏览</a> ·
+  <a href="{{ '/feed.xml' | relative_url }}">RSS 订阅</a>
+</div>
