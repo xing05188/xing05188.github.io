@@ -125,10 +125,32 @@
             font-size: 46px;
             color: #ea80b0;
         }
+
+        /* 返回博客的小链接 */
+        .love-back {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 10;
+            font: 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: #ea80b0;
+            text-decoration: none;
+            padding: 8px 14px;
+            border: 1px solid rgba(234, 128, 176, .5);
+            border-radius: 999px;
+            background: rgba(0, 0, 0, .35);
+            backdrop-filter: blur(6px);
+            transition: background .2s ease, border-color .2s ease;
+        }
+        .love-back:hover {
+            background: rgba(234, 128, 176, .15);
+            border-color: #ea80b0;
+        }
     </style>
 </head>
 
 <body>
+    <a class="love-back" href="/lab/">← 实验室</a>
     <canvas id="pinkboard" width="1920" height="947"></canvas>
 
     <canvas id="canvas" width="1920" height="947"></canvas>
