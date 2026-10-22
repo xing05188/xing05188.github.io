@@ -1,0 +1,45 @@
+---
+layout: page
+title: 系列
+description: 按系列把长文串起来读
+permalink: /series/
+---
+
+{% assign series_names = "" | split: "," %}
+{% for p in site.posts %}
+  {% if p.series %}
+    {% unless series_names contains p.series %}
+      {% assign series_names = series_names | push: p.series %}
+    {% endunless %}
+  {% endif %}
+{% endfor %}
+
+{% if series_names.size == 0 %}
+<div class="empty-note">
+  <p>还没有系列文章。</p>
+  <p>在文章的 front matter 里加一行 <code>series: 系列名</code>，这里就会自动把同系列的文章按顺序串起来。</p>
+</div>
+{% else %}
+<p style="color:var(--text-soft);margin-bottom:26px">共 {{ series_names.size }} 个系列 · 适合按顺序连读。</p>
+{% endif %}
+
+{% for name in series_names %}
+  {% assign sp = site.posts | where_exp: "p", "p.series == name" | sort: "date" %}
+  <div class="series-group">
+    <div class="series-head">
+      <h2>{{ name }}</h2>
+      <span class="pill">{{ sp.size }} 篇</span>
+    </div>
+    <div class="series-track">
+      {% for p in sp %}
+      <a class="series-node" href="{{ p.url | relative_url }}">
+        <span class="sn-idx">{{ forloop.index }}</span>
+        <span class="sn-body">
+          <span class="sn-title">{{ p.title }}</span>
+          <span class="sn-meta">{{ p.date | date: "%Y-%m-%d" }} · {% assign c = p.content | strip_html | strip_newlines | size %}{{ c }} 字</span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}

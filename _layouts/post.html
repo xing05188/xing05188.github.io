@@ -192,3 +192,18 @@ layout: default
 
 <!-- 目录（由 main.js 生成） -->
 <nav class="toc" aria-label="文章目录"></nav>
+
+<!-- 数学公式支持（MathJax 3，仅在本页加载） -->
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    options: {
+      skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>

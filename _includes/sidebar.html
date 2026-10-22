@@ -32,7 +32,7 @@
         <span>标签</span>
       </div>
       <div class="stat-cell">
-        <b>{% assign tw = 0 %}{% for p in site.posts %}{% assign tw = tw | plus: p.content | strip_html | strip_newlines | size %}{% endfor %}{{ tw }}</b>
+        <b>{% assign tw = 0 %}{% for p in site.posts %}{% assign pc = p.content | strip_html | strip_newlines | size %}{% assign tw = tw | plus: pc %}{% endfor %}{{ tw }}</b>
         <span>总字数</span>
       </div>
       <div class="stat-cell">

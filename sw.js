@@ -3,12 +3,15 @@
    策略：静态资源 cache-first（更新后自动换新）；页面 network-first，
    离线时回退到缓存；导航失败时展示缓存的 404 页。
    ============================================================ */
-var VERSION = 'xingji-v1';
+var VERSION = 'xingji-v3';
 var SHELL = [
   '/',
   '/archive/',
   '/tags/',
   '/search/',
+  '/stats/',
+  '/series/',
+  '/guestbook/',
   '/about/',
   '/lab/',
   '/books/',
@@ -81,7 +84,7 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
-  // 其他（如 search.json）：staleness-ok 的 cache-first
+  // 其他（如 feed.xml）：staleness-ok 的 cache-first
   e.respondWith(
     caches.match(req).then(function (hit) {
       var net = fetch(req).then(function (res) {

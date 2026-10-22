@@ -1,7 +1,8 @@
 /* ============================================================
    星记 · 交互脚本（零依赖，ES5 兼容）
    模块：主题三态 / 公告 / 导航 / 进度条 / 目录 / 搜索 / 命令面板 /
-        代码块 / 星空画布 / 打字机 / 随机文章 / 点赞 / 分享 / 灯箱 / 动效
+        代码块 / 星空画布 / 打字机 / 随机文章 / 点赞 / 分享 / 灯箱 / 动效 /
+        阅读字号 / 快捷键帮助 / 归档标签筛选 / Service Worker 更新提示
    ============================================================ */
 (function () {
   'use strict';
@@ -21,9 +22,9 @@
     setJSON: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   };
 
-  /* ---------- Toast ---------- */
+  /* ---------- Toast（支持带一个操作按钮） ---------- */
   var toastTimer = null;
-  function toast(msg) {
+  function toast(msg, actionLabel, actionFn) {
     var el = $('.toast');
     if (!el) {
       el = doc.createElement('div');
@@ -31,10 +32,26 @@
       el.setAttribute('role', 'status');
       doc.body.appendChild(el);
     }
-    el.textContent = msg;
+    el.innerHTML = '';
+    el.appendChild(doc.createTextNode(msg));
+    if (actionLabel) {
+      var b = doc.createElement('button');
+      b.type = 'button';
+      b.className = 'toast-action';
+      b.textContent = actionLabel;
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (actionFn) actionFn();
+        el.classList.remove('show');
+      });
+      el.appendChild(b);
+      el.classList.add('clickable');
+    } else {
+      el.classList.remove('clickable');
+    }
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2200);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, actionLabel ? 8000 : 2200);
   }
 
   /* ==========================================================
@@ -466,6 +483,9 @@
       { title: '首页', url: '/', hint: '首页' },
       { title: '归档', url: '/archive/', hint: '全部文章' },
       { title: '标签', url: '/tags/', hint: '按主题浏览' },
+      { title: '数据统计', url: '/stats/', hint: '热力图与产量' },
+      { title: '系列合集', url: '/series/', hint: '按系列连读' },
+      { title: '留言板', url: '/guestbook/', hint: '说点什么' },
       { title: '实验室', url: '/lab/', hint: '好玩的小页面' },
       { title: '关于', url: '/about/', hint: '关于我' },
       { title: '友链', url: '/friends/', hint: '朋友们' },
@@ -479,6 +499,9 @@
       { title: '切换主题（亮 / 暗 / 跟随系统）', hint: '操作', action: function () { $('.theme-toggle').click(); } },
       { title: '随便看看（随机一篇文章）', hint: '操作', action: randomPost },
       { title: '复制当前页面链接', hint: '操作', action: function () { copyText(location.href).then(function () { toast('链接已复制'); }); } },
+      { title: '放大正文字号', hint: '阅读', action: function () { changeReadSize(1); } },
+      { title: '缩小正文字号', hint: '阅读', action: function () { changeReadSize(-1); } },
+      { title: '查看键盘快捷键', hint: '操作', action: function () { toggleHelp(); } },
       { title: '打开 RSS 订阅', url: '/feed.xml', hint: '操作' },
       { title: '打开 GitHub 主页', url: 'https://github.com/xing05188', hint: '外部', ext: true }
     ];
@@ -927,13 +950,14 @@
      16. 入场动效（IntersectionObserver）
      ========================================================== */
   (function initReveal() {
-    var items = $$('.post-card, .widget, .archive-row, .year-group, .lab-card, .friend-card, .book-card, .tl-item, .related-item, .archive-chart');
+    var items = $$('.post-card, .widget, .archive-row, .year-group, .lab-card, .friend-card, .book-card, .tl-item, .related-item, .archive-chart, .bar-rows, .quote-band, .series-node');
     if (!items.length) return;
 
     if (!('IntersectionObserver' in window) || reduceMotion) {
       items.forEach(function (el) { el.classList.add('in'); });
       // 归档柱状图：无动画时直接给终值
       $$('.archive-chart .bar').forEach(function (b) { b.style.height = b.getAttribute('data-h'); });
+      $$('.br-fill').forEach(function (b) { b.style.width = b.getAttribute('data-w'); });
       return;
     }
     items.forEach(function (el) { el.classList.add('reveal'); });
@@ -943,6 +967,7 @@
         if (en.isIntersecting) {
           en.target.classList.add('in');
           $$('.bar', en.target).forEach(function (b) { b.style.height = b.getAttribute('data-h'); });
+          $$('.br-fill', en.target).forEach(function (b) { b.style.width = b.getAttribute('data-w'); });
           io.unobserve(en.target);
         }
       });
@@ -983,19 +1008,164 @@
   })();
 
   /* ==========================================================
-     18. 键盘快捷键：/ 聚焦搜索，Esc 关闭浮层
+     18. 键盘快捷键：/ 聚焦搜索，? 帮助，t 主题，Esc 关闭浮层
      ========================================================== */
   (function initKeys() {
     doc.addEventListener('keydown', function (e) {
+      var inField = /^(INPUT|TEXTAREA|SELECT)$/.test(doc.activeElement.tagName) ||
+                    (doc.activeElement.isContentEditable);
       if (e.key === 'Escape') {
         var menu = $('.nav-links');
         if (menu) menu.classList.remove('open');
+        closeHelp();
+        var po = $('.palette-overlay');
+        if (po) po.classList.remove('open');
       }
-      if (e.key === '/' && !/^(INPUT|TEXTAREA)$/.test(doc.activeElement.tagName)) {
+      if (inField || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === '/' ) {
         var box = $('#search-input');
         if (box) { e.preventDefault(); box.focus(); }
+      } else if (e.key === '?') {
+        e.preventDefault();
+        toggleHelp();
+      } else if (e.key === 't' || e.key === 'T') {
+        var tb = $('.theme-toggle');
+        if (tb) tb.click();
       }
     });
+  })();
+
+  /* ==========================================================
+     19. 阅读字号：小 / 中 / 大（只影响正文，记忆选择）
+     ========================================================== */
+  var READ_SIZES = ['1.055rem', '1.18rem', '1.32rem'];
+  var READ_LABELS = ['小', '中', '大'];
+  var readIdx = parseInt(store.get('readSize', '0'), 10);
+  if (isNaN(readIdx) || readIdx < 0 || readIdx >= READ_SIZES.length) readIdx = 0;
+
+  function applyReadSize() {
+    doc.documentElement.style.setProperty('--read-size', READ_SIZES[readIdx]);
+  }
+  applyReadSize();
+
+  function changeReadSize(delta) {
+    var next = Math.max(0, Math.min(READ_SIZES.length - 1, readIdx + delta));
+    if (next === readIdx) {
+      toast('已经是「' + READ_LABELS[next] + '」号了');
+      return next;
+    }
+    readIdx = next;
+    store.set('readSize', String(readIdx));
+    applyReadSize();
+    toast('正文字号：' + READ_LABELS[readIdx]);
+    return readIdx;
+  }
+
+  /* ==========================================================
+     20. 快捷键帮助面板（? 唤出）
+     ========================================================== */
+  var helpOverlay = null;
+
+  function ensureHelp() {
+    if (helpOverlay) return;
+    helpOverlay = doc.createElement('div');
+    helpOverlay.className = 'help-overlay';
+    helpOverlay.setAttribute('role', 'dialog');
+    helpOverlay.setAttribute('aria-label', '键盘快捷键');
+    helpOverlay.innerHTML =
+      '<div class="help-panel">' +
+        '<div class="help-title">键盘快捷键</div>' +
+        '<div class="help-body">' +
+          '<div class="hk-row"><span>搜索 / 命令面板</span><span class="hk-keys"><kbd>/</kbd> 或 <kbd>Ctrl</kbd>+<kbd>K</kbd></span></div>' +
+          '<div class="hk-row"><span>本帮助</span><span class="hk-keys"><kbd>?</kbd></span></div>' +
+          '<div class="hk-row"><span>切换主题</span><span class="hk-keys"><kbd>T</kbd></span></div>' +
+          '<div class="hk-row"><span>关闭浮层</span><span class="hk-keys"><kbd>Esc</kbd></span></div>' +
+          '<div class="hk-row"><span>面板内选择 / 打开</span><span class="hk-keys"><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></span></div>' +
+        '</div>' +
+        '<div class="help-foot">按 Esc 或点击空白处关闭</div>' +
+      '</div>';
+    doc.body.appendChild(helpOverlay);
+    helpOverlay.addEventListener('click', function (e) {
+      if (e.target === helpOverlay) closeHelp();
+    });
+  }
+
+  function toggleHelp() {
+    ensureHelp();
+    if (helpOverlay.classList.contains('open')) closeHelp();
+    else openHelp();
+  }
+  function openHelp() { helpOverlay.classList.add('open'); }
+  function closeHelp() { if (helpOverlay) helpOverlay.classList.remove('open'); }
+
+  /* ==========================================================
+     21. 归档页标签筛选（点击 chip 过滤，支持 ?tag= 直达）
+     ========================================================== */
+  (function initArchiveFilter() {
+    var chips = $('#archive-chips');
+    if (!chips) return;
+
+    var rows = $$('.archive-row');
+    var groups = $$('.year-group');
+    var count = $('#archive-count');
+
+    function apply(tag) {
+      var shown = 0;
+      rows.forEach(function (r) {
+        var tags = r.getAttribute('data-tags') || '';
+        var ok = !tag || (',' + tags + ',').indexOf(',' + tag + ',') > -1;
+        r.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+      });
+      groups.forEach(function (g) {
+        var any = $$('.archive-row', g).some(function (r) { return r.style.display !== 'none'; });
+        g.style.display = any ? '' : 'none';
+      });
+      if (count) count.textContent = tag
+        ? '「' + tag + '」相关文章 ' + shown + ' 篇'
+        : '正在显示 ' + shown + ' 篇';
+      $$('.chip', chips).forEach(function (c) {
+        c.classList.toggle('active', (c.getAttribute('data-tag') || '') === tag);
+      });
+      if (window.history && history.replaceState) {
+        var url = new URL(location.href);
+        if (tag) url.searchParams.set('tag', tag);
+        else url.searchParams.delete('tag');
+        history.replaceState(null, '', url.toString());
+      }
+    }
+
+    chips.addEventListener('click', function (e) {
+      var chip = e.target && e.target.closest ? e.target.closest('.chip') : null;
+      if (!chip) return;
+      e.preventDefault();
+      apply(chip.getAttribute('data-tag') || '');
+    });
+
+    var initial = '';
+    try { initial = new URLSearchParams(location.search).get('tag') || ''; } catch (err) {}
+    if (initial) apply(initial);
+  })();
+
+  /* ==========================================================
+     22. Service Worker 更新提示
+     ========================================================== */
+  (function initSwUpdate() {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg) return;
+      function announce() {
+        toast('站点有新版本', '刷新', function () { location.reload(); });
+      }
+      if (reg.waiting && navigator.serviceWorker.controller) { announce(); return; }
+      reg.addEventListener('updatefound', function () {
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', function () {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) announce();
+        });
+      });
+    }).catch(function () {});
   })();
 
 })();

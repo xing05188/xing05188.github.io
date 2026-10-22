@@ -34,6 +34,8 @@ nav:
   - { name: 书单, url: "/books/" }
   - { name: 友链, url: "/friends/" }
   - { name: 时间线, url: "/timeline/" }
+  - { name: 统计, url: "/stats/" }
+  - { name: 留言, url: "/guestbook/" }
   - { name: 关于, url: "/about/" }
 
 # ---------- 文章链接格式 ----------

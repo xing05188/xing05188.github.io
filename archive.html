@@ -1,7 +1,7 @@
 ---
 layout: page
 title: 归档
-description: 按时间倒序排列的全部文章
+description: 按时间倒序排列的全部文章，可按标签筛选
 permalink: /archive/
 ---
 
@@ -20,6 +20,20 @@ permalink: /archive/
   {% endfor %}
 </div>
 
+<!-- 标签筛选（点击过滤，支持 /archive/?tag=xxx 直达） -->
+{% assign tag_names = "" | split: "," %}
+{% for tag in site.tags %}{% assign tag_names = tag_names | push: tag[0] %}{% endfor %}
+{% assign tag_names = tag_names | sort %}
+{% if tag_names.size > 0 %}
+<div class="filter-chips" id="archive-chips" role="group" aria-label="按标签筛选">
+  <button class="chip active" type="button" data-tag="">全部 <span class="chip-n">{{ site.posts.size }}</span></button>
+  {% for tag_name in tag_names %}
+  <button class="chip" type="button" data-tag="{{ tag_name | downcase }}">{{ tag_name }} <span class="chip-n">{{ site.tags[tag_name].size }}</span></button>
+  {% endfor %}
+</div>
+<p class="filter-count" id="archive-count">正在显示 {{ site.posts.size }} 篇</p>
+{% endif %}
+
 {% if site.posts.size == 0 %}
 <p style="color:var(--text-mute)">还没有文章。</p>
 {% endif %}
@@ -29,7 +43,8 @@ permalink: /archive/
   <div class="year-label">{{ year.name }}</div>
 
   {% for post in year.items %}
-  <a class="archive-row" href="{{ post.url | relative_url }}">
+  <a class="archive-row" href="{{ post.url | relative_url }}"
+     data-tags="{{ post.tags | join: ',' | downcase }}">
     <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%m-%d" }}</time>
     <span class="ar-title">{{ post.title }}{% if post.pinned %} 📌{% endif %}</span>
     {% if post.categories.first %}<span class="ar-cat">{{ post.categories.first }}</span>{% endif %}

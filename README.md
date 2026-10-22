@@ -13,31 +13,34 @@
 
 **阅读体验**
 - 亮 / 暗 / 跟随系统**三态主题**，记忆选择，刷新不闪白
-- 首屏 **Canvas 星空**（闪烁星点 + 流星，呼应"星记"），打字机轮播标语
+- 首屏 **Canvas 星空**（闪烁星点 + 流星，呼应"星记"），打字机轮播标语、每日一句
 - 阅读进度条、文章页侧边目录（滚动高亮当前章节）、返回顶部
+- **正文字号三档调节**（命令面板 / 快捷键），只影响正文不破坏排版
 - 置顶文章、系列文章导航、相关文章推荐
 - 入场动效编排，完整尊重 `prefers-reduced-motion`
 
 **查找**
 - 全文搜索：多关键词（AND）、**拼音首字母**（「jk」→ Jekyll）、搜索历史与热词
-- **命令面板**（<kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>）：搜文章、跳页面、执行操作（切主题 / 随机文章 / 复制链接）
-- 任意页按 <kbd>/</kbd> 聚焦搜索框
+- **命令面板**（<kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>）：搜文章、跳页面、执行操作（切主题 / 随机文章 / 复制链接 / 调字号）
+- 任意页按 <kbd>/</kbd> 聚焦搜索框，<kbd>?</kbd> 查看快捷键，<kbd>T</kbd> 切主题
 
 **页面**
-- 归档：年度文章产量图 + 按年分组
+- 归档：年度文章产量图 + **标签筛选**（支持 `/archive/?tag=xxx` 直达）
 - 标签：权重标签云 + 按主题分组
-- 书单 / 友链 / 时间线 / 站点导航（数据驱动，改 `_data/site.yml` 即可）
+- **数据统计**：写作热力图、星期发文习惯、标签 Top、分类构成
+- 书单 / 友链 / 时间线 / **系列合集 / 留言板** / 站点导航（数据驱动，改 `_data/site.yml` 即可）
 - 实验室：老站点保留的 8 个好玩小页面
 
 **文章页**
 - 字数统计与阅读时长、更新日期、头图（`cover`）
 - 图片灯箱（点击放大）、代码块语言标签 + 一键复制 + 长代码折叠
+- **MathJax 数学公式**（`$...$` / `$$...$$`）
 - 点赞（localStorage 防重复）、分享（复制 / 微博 / X / Telegram）
 - 三种提示块（`{:.tip}` `{:.note}` `{:.warn}`）、emoji 短代码、脚注
 - 版权卡片（CC BY-NC-SA 4.0）
 
 **工程**
-- **PWA**：可安装到桌面/主屏，离线可读（Service Worker + manifest）
+- **PWA**：可安装到桌面/主屏，离线可读，新版本就绪时提示刷新
 - SEO：JSON-LD 结构化数据、canonical、Open Graph / Twitter 卡片（默认分享图自动生成）
 - RSS **全文输出**、sitemap、robots.txt
 - 评论：giscus（GitHub Discussions）配置就绪，见下文
@@ -93,25 +96,28 @@ cover: ""              # 可选：头图
 .
 ├── _config.yml           站点配置：标题、作者、导航、链接格式
 ├── _data/
-│   └── site.yml          公告 / 友链 / 书单 / 时间线 等数据
+│   └── site.yml          公告 / 友链 / 书单 / 时间线 / 每日一句 等数据
 ├── _layouts/             布局模板
 │   ├── default.html      最外层骨架
-│   ├── home.html         首页（星空 Hero）
-│   ├── post.html         文章页
+│   ├── home.html         首页（星空 Hero + 今日一句）
+│   ├── post.html         文章页（含 MathJax）
 │   └── page.html         普通页面（归档 / 标签 / 关于 …）
 ├── _includes/            可复用片段（head / header / footer / sidebar / book-card）
 ├── _posts/               文章，命名 年-月-日-标题.md
 ├── assets/
 │   ├── css/main.css      全部样式（含亮暗两套变量）
 │   ├── css/syntax.css    代码高亮配色（GitHub 风格）
-│   ├── js/main.js        主题 / 命令面板 / 搜索 / 星空 / 灯箱 等交互
+│   ├── js/main.js        主题 / 命令面板 / 搜索 / 星空 / 灯箱 / 阅读字号 等交互
 │   ├── js/posts-data.js  全站文章速查索引（构建生成）
 │   ├── js/pinyin-data.js 汉字拼音映射（构建生成，供拼音搜索）
 │   └── img/              图标、 favicon、OG 分享图（PIL 生成）
 ├── index.html            首页
-├── archive.html          归档页
+├── archive.html          归档页（标签筛选）
 ├── tags.html             标签页
+├── stats.html            数据统计页（热力图 / 产量 / 习惯）
+├── series.html           系列合集页
 ├── search.html           搜索页
+├── guestbook.md          留言板（giscus）
 ├── friends.md            友链页
 ├── books.md              书单页
 ├── timeline.md           时间线页
@@ -122,7 +128,7 @@ cover: ""              # 可选：头图
 ├── sitemap.xml           站点地图
 ├── robots.txt            爬虫协议
 ├── manifest.webmanifest  PWA 清单
-├── sw.js                Service Worker（离线缓存）
+├── sw.js                Service Worker（离线缓存 + 更新提示）
 └── lab/                  老站点保留的小页面
 ```
 
@@ -160,7 +166,7 @@ cover: ""              # 可选：头图
 ### 开启评论（giscus）
 
 1. 打开 https://github.com/apps/giscus ，Install，仅授权本仓库
-2. 编辑 `_layouts/post.html`，把底部注释里的 `<div class="comments">…</div>` 放出来
+2. 编辑 `_layouts/post.html` 与 `guestbook.md`，把底部注释里的 `<div class="comments">…</div>` 放出来
    （`repo-id` 与 `category-id` 已填好，Discussions 已开启）
 
 ### 重新生成图标 / 分享图 / 拼音映射

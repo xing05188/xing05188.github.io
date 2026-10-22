@@ -54,6 +54,18 @@ layout: default
   </a>
 </section>
 
+<!-- ===================== 今日一句 ===================== -->
+{% assign day_idx = 'now' | date: '%j' | plus: 0 | modulo: site.data.site.quotes.size %}
+<section class="quote-band reveal">
+  <div class="wrap">
+    <blockquote>
+      <span class="q-mark" aria-hidden="true">“</span>
+      <p>{{ site.data.site.quotes[day_idx] }}</p>
+      <cite>—— 今日一句 · {{ 'now' | date: "%m 月 %d 日" }}</cite>
+    </blockquote>
+  </div>
+</section>
+
 <!-- ===================== 文章列表 ===================== -->
 <div class="wrap" id="latest">
   <div class="layout">

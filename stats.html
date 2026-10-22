@@ -1,0 +1,219 @@
+---
+layout: page
+title: 统计
+description: 用数据看看这个博客的样子：写作热力图、产量、标签与分类
+permalink: /stats/
+---
+
+{% comment %} ---------- 全站数字预计算 ---------- {% endcomment %}
+{% assign total_words = 0 %}
+{% assign longest = site.posts.first %}
+{% assign longest_chars = 0 %}
+{% assign avg_chars = 0 %}
+{% for post in site.posts %}
+  {% assign c = post.content | strip_html | strip_newlines | size %}
+  {% assign total_words = total_words | plus: c %}
+  {% if c > longest_chars %}{% assign longest_chars = c %}{% assign longest = post %}{% endif %}
+{% endfor %}
+{% if site.posts.size > 0 %}{% assign avg_chars = total_words | divided_by: site.posts.size %}{% endif %}
+
+{% assign start_ts = site.data.site.started | date: '%s' %}
+{% assign now_ts = 'now' | date: '%s' %}
+{% assign days_live = now_ts | minus: start_ts | divided_by: 86400 %}
+{% assign months_live = days_live | divided_by: 30 %}
+{% if months_live < 1 %}{% assign months_live = 1 %}{% endif %}
+
+{% comment %} ---------- 星期习惯 ---------- {% endcomment %}
+{% assign w1 = 0 %}{% assign w2 = 0 %}{% assign w3 = 0 %}{% assign w4 = 0 %}{% assign w5 = 0 %}{% assign w6 = 0 %}{% assign w7 = 0 %}
+{% assign wmax = 1 %}
+{% for post in site.posts %}
+  {% assign d = post.date | date: '%u' | plus: 0 %}
+  {% if d == 1 %}{% assign w1 = w1 | plus: 1 %}
+  {% elsif d == 2 %}{% assign w2 = w2 | plus: 1 %}
+  {% elsif d == 3 %}{% assign w3 = w3 | plus: 1 %}
+  {% elsif d == 4 %}{% assign w4 = w4 | plus: 1 %}
+  {% elsif d == 5 %}{% assign w5 = w5 | plus: 1 %}
+  {% elsif d == 6 %}{% assign w6 = w6 | plus: 1 %}
+  {% else %}{% assign w7 = w7 | plus: 1 %}
+  {% endif %}
+{% endfor %}
+{% assign wmax = w1 %}{% if w2 > wmax %}{% assign wmax = w2 %}{% endif %}
+{% if w3 > wmax %}{% assign wmax = w3 %}{% endif %}{% if w4 > wmax %}{% assign wmax = w4 %}{% endif %}
+{% if w5 > wmax %}{% assign wmax = w5 %}{% endif %}{% if w6 > wmax %}{% assign wmax = w6 %}{% endif %}
+{% if w7 > wmax %}{% assign wmax = w7 %}{% endif %}
+
+<!-- ===================== 总览数字 ===================== -->
+<div class="stat-hero">
+  <div class="sh-cell">
+    <b>{{ site.posts.size }}</b>
+    <span>篇文章</span>
+  </div>
+  <div class="sh-cell">
+    <b>{{ total_words }}</b>
+    <span>总字数</span>
+  </div>
+  <div class="sh-cell">
+    <b>{{ site.tags.size }}</b>
+    <span>个标签</span>
+  </div>
+  <div class="sh-cell">
+    <b>{{ site.categories.size }}</b>
+    <span>个分类</span>
+  </div>
+  <div class="sh-cell">
+    <b>{{ days_live }}</b>
+    <span>运行天数</span>
+  </div>
+  <div class="sh-cell">
+    <b>{{ avg_chars }}</b>
+    <span>篇均字数</span>
+  </div>
+</div>
+
+{% assign per_month = site.posts.size | times: 10.0 | divided_by: months_live | divided_by: 10.0 %}
+<p style="font-size:.88rem;color:var(--text-mute);margin-top:14px">
+  建站于 {{ site.data.site.started | date: "%Y 年 %m 月 %d 日" }} ·
+  最近更新于 {{ site.posts.first.date | date: "%Y-%m-%d" }} ·
+  月均 {{ per_month | round: 1 }} 篇
+  {% if longest %} · 最长文章《{{ longest.title }}》（{{ longest_chars }} 字）{% endif %}
+</p>
+
+<!-- ===================== 写作热力图（近一年） ===================== -->
+<div class="section-head" style="margin-top:44px">
+  <h2>写作热力图</h2>
+  <span class="count">近 12 个月</span>
+</div>
+
+{% assign by_day = site.posts | group_by_exp: "p", "p.date | date: '%Y-%m-%d'" %}
+{% assign today_ts = 'now' | date: '%s' %}
+
+<div class="heatmap-wrap">
+  <div class="hm-weekdays" aria-hidden="true">
+    <span>一</span><span></span><span>三</span><span></span><span>五</span><span></span><span>日</span>
+  </div>
+  <div class="hm-scroll">
+    <div class="hm-months" aria-hidden="true">
+      {% assign prev_m = 0 %}
+      {% for w in (0..52) %}
+        {% assign od = 52 | minus: w | times: 7 %}
+        {% assign off = od | times: 86400 %}
+        {% assign col_ts = today_ts | minus: off %}
+        {% assign m = col_ts | date: '%m' | plus: 0 %}
+        {% if m != prev_m %}<span class="hm-month">{{ m }} 月</span>{% assign prev_m = m %}
+        {% else %}<span class="hm-spacer"></span>{% endif %}
+      {% endfor %}
+    </div>
+    <div class="heatmap" role="img" aria-label="最近一年每日发文数量">
+      {% for w in (0..52) %}
+        {% for d in (0..6) %}
+          {% assign od = 52 | minus: w | times: 7 | plus: 6 | minus: d %}
+          {% assign off = od | times: 86400 %}
+          {% assign day_ts = today_ts | minus: off %}
+          {% assign day_str = day_ts | date: '%Y-%m-%d' %}
+          {% assign g = by_day | where_exp: "x", "x.name == day_str" | first %}
+          {% assign cnt = 0 %}
+          {% if g %}{% assign cnt = g.items.size %}{% endif %}
+          {% assign lv = 0 %}
+          {% if cnt == 1 %}{% assign lv = 1 %}
+          {% elsif cnt == 2 %}{% assign lv = 2 %}
+          {% elsif cnt == 3 %}{% assign lv = 3 %}
+          {% elsif cnt >= 4 %}{% assign lv = 4 %}
+          {% endif %}
+          <span class="hm-cell lv-{{ lv }}" title="{{ day_str }} · {{ cnt }} 篇"></span>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+  <div class="hm-legend">
+    <span>少</span>
+    <span class="hm-cell lv-0"></span>
+    <span class="hm-cell lv-1"></span>
+    <span class="hm-cell lv-2"></span>
+    <span class="hm-cell lv-3"></span>
+    <span class="hm-cell lv-4"></span>
+    <span>多</span>
+  </div>
+</div>
+
+<!-- ===================== 年度产量 ===================== -->
+<div class="section-head" style="margin-top:44px">
+  <h2>年度产量</h2>
+  <span class="count">{{ site.posts.size }} 篇</span>
+</div>
+
+{% assign posts_by_year = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+{% assign max_count = 1 %}
+{% for year in posts_by_year %}{% if year.items.size > max_count %}{% assign max_count = year.items.size %}{% endif %}{% endfor %}
+
+<div class="archive-chart" aria-label="每年文章数量">
+  {% for year in posts_by_year %}
+  <div class="bar-col">
+    <span class="bar-num">{{ year.items.size }}</span>
+    <div class="bar" data-h="{{ year.items.size | times: 100 | divided_by: max_count }}%"></div>
+    <span class="bar-label">{{ year.name }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ===================== 一周写作习惯 ===================== -->
+<div class="section-head" style="margin-top:44px">
+  <h2>星期几发文最多</h2>
+  <span class="count">共 {{ site.posts.size }} 篇</span>
+</div>
+
+<div class="bar-rows">
+  <div class="bar-row"><span class="br-label">周一</span><div class="br-track"><div class="br-fill" data-w="{{ w1 | times: 100 | divided_by: wmax }}%"></div></div><span class="br-num">{{ w1 }}</span></div>
+  <div class="bar-row"><span class="br-label">周二</span><div class="br-track"><div class="br-fill" data-w="{{ w2 | times: 100 | divided_by: wmax }}%"></div></div><span class="br-num">{{ w2 }}</span></div>
+  <div class="bar-row"><span class="br-label">周三</span><div class="br-track"><div class="br-fill" data-w="{{ w3 | times: 100 | divided_by: wmax }}%"></div></div><span class="br-num">{{ w3 }}</span></div>
+  <div class="bar-row"><span class="br-label">周四</span><div class="br-track"><div class="br-fill" data-w="{{ w4 | times: 100 | divided_by: wmax }}%"></div></div><span class="br-num">{{ w4 }}</span></div>
+  <div class="bar-row"><span class="br-label">周五</span><div class="br-track"><div class="br-fill" data-w="{{ w5 | times: 100 | divided_by: wmax }}%"></div></div><span class="br-num">{{ w5 }}</span></div>
+  <div class="bar-row"><span class="br-label">周六</span><div class="br-track"><div class="br-fill" data-w="{{ w6 | times: 100 | divided_by: wmax }}%"></div></div><span class="br-num">{{ w6 }}</span></div>
+  <div class="bar-row"><span class="br-label">周日</span><div class="br-track"><div class="br-fill" data-w="{{ w7 | times: 100 | divided_by: wmax }}%"></div></div><span class="br-num">{{ w7 }}</span></div>
+</div>
+
+<!-- ===================== 标签 Top ===================== -->
+<div class="section-head" style="margin-top:44px">
+  <h2>标签 Top 12</h2>
+  <span class="count">{{ site.tags.size }} 个标签</span>
+</div>
+
+{% assign max_tag = 1 %}
+{% for tag in site.tags %}{% if tag[1].size > max_tag %}{% assign max_tag = tag[1].size %}{% endif %}{% endfor %}
+{% assign shown_tags = 0 %}
+
+<div class="bar-rows">
+  {% for i in (1..max_tag) %}
+    {% assign level = max_tag | plus: 1 | minus: i %}
+    {% for tag in site.tags %}
+      {% if tag[1].size == level and shown_tags < 12 %}
+      <div class="bar-row">
+        <a class="br-label br-link" href="{{ '/tags/' | relative_url }}#{{ tag[0] | slugify }}">{{ tag[0] }}</a>
+        <div class="br-track"><div class="br-fill is-accent" data-w="{{ level | times: 100 | divided_by: max_tag }}%"></div></div>
+        <span class="br-num">{{ tag[1].size }}</span>
+      </div>
+      {% assign shown_tags = shown_tags | plus: 1 %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+</div>
+
+<!-- ===================== 分类构成 ===================== -->
+<div class="section-head" style="margin-top:44px">
+  <h2>分类构成</h2>
+  <span class="count">{{ site.categories.size }} 个分类</span>
+</div>
+
+<div class="bar-rows">
+  {% for cat in site.categories %}
+  <div class="bar-row">
+    <span class="br-label">{{ cat[0] }}</span>
+    <div class="br-track"><div class="br-fill is-gold" data-w="{{ cat[1].size | times: 100 | divided_by: site.posts.size }}%"></div></div>
+    <span class="br-num">{{ cat[1].size }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div style="margin-top:34px;font-size:.9rem;color:var(--text-mute)">
+  <a href="{{ '/archive/' | relative_url }}">去归档翻旧文章 →</a> ·
+  <a href="{{ '/timeline/' | relative_url }}">时间线 →</a>
+</div>
