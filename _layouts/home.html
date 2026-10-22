@@ -2,35 +2,60 @@
 layout: default
 ---
 
+{% comment %} ---------- 全站统计（Liquid 预计算） ---------- {% endcomment %}
+{% assign total_words = 0 %}
+{% for post in site.posts %}{% assign total_words = total_words | plus: post.content | strip_html | strip_newlines | size %}{% endfor %}
+{% assign start_ts = site.data.site.started | date: '%s' %}
+{% assign now_ts = 'now' | date: '%s' %}
+{% assign run_days = now_ts | minus: start_ts | divided_by: 86400 %}
+{% assign pinned_posts = site.posts | where_exp: "p", "p.pinned == true" %}
+{% assign normal_posts = site.posts | where_exp: "p", "p.pinned != true" %}
+
 <!-- ===================== Hero ===================== -->
 <section class="hero">
+  <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
+  <div class="hero-glow" aria-hidden="true"></div>
+
   <div class="wrap">
     <div class="hero-inner">
-      <h1>一半写给代码，<br>一半写给自己。</h1>
-      <p class="lead">
-        你好，我是{{ site.owner.name }}，{{ site.owner.bio }}
-        这里存放我的技术笔记、读书摘抄和生活碎片 —— 写得慢，但会一直写下去。
-      </p>
+      <p class="hero-kicker"><span class="kicker-star">✦</span> 一个人的数字花园</p>
+      <h1>一半写给代码，<br><em>一半写给自己。</em></h1>
+
+      <p class="lead type-line" id="type-line"
+         data-phrases='["同济大学计算机在读，写代码也写生活。","技术笔记、读书摘抄和生活碎片，写得慢，但会一直写下去。","偶尔拍照，常常散步。","这里没有 KPI，只有真心想清楚的事。"]'
+         aria-live="polite"></p>
+
       <div class="hero-meta">
-        <span>{{ site.owner.location }}</span>
+        <span class="stat"><b>{{ site.posts.size }}</b> 篇文章</span>
         <span class="dot">·</span>
-        <span>{{ site.posts.size }} 篇文章</span>
+        <span class="stat"><b>{{ site.tags.size }}</b> 个标签</span>
         <span class="dot">·</span>
-        <span>{{ site.tags.size }} 个标签</span>
+        <span class="stat"><b>{{ total_words }}</b> 字</span>
+        <span class="dot">·</span>
+        <span class="stat">已运行 <b>{{ run_days }}</b> 天</span>
       </div>
+
       <div class="hero-actions">
         <a class="btn btn-primary" href="{{ '/archive/' | relative_url }}">
           开始阅读
           <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
+        <button class="btn btn-ghost" type="button" id="random-btn" title="随机跳转到一篇文章">
+          <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+          随便看看
+        </button>
         <a class="btn btn-ghost" href="{{ '/about/' | relative_url }}">关于我</a>
       </div>
     </div>
   </div>
+
+  <a class="hero-scroll" href="#latest" aria-label="向下浏览文章">
+    <span></span>
+  </a>
 </section>
 
 <!-- ===================== 文章列表 ===================== -->
-<div class="wrap">
+<div class="wrap" id="latest">
   <div class="layout">
     <div class="content-col">
       <div class="section-head">
@@ -38,14 +63,18 @@ layout: default
         <span class="count">共 {{ site.posts.size }} 篇</span>
       </div>
 
-      <div class="post-list">
-        {% for post in site.posts limit: site.home_posts_limit %}
-        <a class="post-card" href="{{ post.url | relative_url }}">
+      {% if pinned_posts.size > 0 %}
+      <div class="pinned-strip">
+        {% for post in pinned_posts %}
+        <a class="post-card is-pinned" href="{{ post.url | relative_url }}">
+          <span class="pin-badge" title="置顶文章">
+            <svg viewBox="0 0 24 24"><path d="M12 2v8M8.5 4.5h7M12 10c-3 1.5-6 4.5-6 8h12c0-3.5-3-6.5-6-8z"/></svg>
+            置顶
+          </span>
           <div class="pc-meta">
             <time class="pc-date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y 年 %m 月 %d 日" }}</time>
-            {% if post.categories.first %}
-            <span class="pc-cat">{{ post.categories.first }}</span>
-            {% endif %}
+            {% if post.categories.first %}<span class="pc-cat">{{ post.categories.first }}</span>{% endif %}
+            {% if post.series %}<span class="pc-series">系列 · {{ post.series }}</span>{% endif %}
           </div>
           <h3>{{ post.title }}</h3>
           <p class="pc-excerpt">{{ post.excerpt | strip_html | strip_newlines | truncate: 96 }}</p>
@@ -57,11 +86,38 @@ layout: default
         </a>
         {% endfor %}
       </div>
+      {% endif %}
+
+      <div class="post-list">
+        {% for post in normal_posts limit: site.home_posts_limit %}
+        <a class="post-card" href="{{ post.url | relative_url }}">
+          <div class="pc-meta">
+            <time class="pc-date" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y 年 %m 月 %d 日" }}</time>
+            {% if post.categories.first %}<span class="pc-cat">{{ post.categories.first }}</span>{% endif %}
+            {% if post.series %}<span class="pc-series">系列 · {{ post.series }}</span>{% endif %}
+          </div>
+          <h3>{{ post.title }}</h3>
+          <p class="pc-excerpt">{{ post.excerpt | strip_html | strip_newlines | truncate: 96 }}</p>
+          {% if post.tags.first %}
+          <div class="pc-tags">
+            {% for t in post.tags limit: 3 %}<span class="tag-mini">{{ t }}</span>{% endfor %}
+            <span class="pc-read">阅读全文 →</span>
+          </div>
+          {% else %}
+          <div class="pc-tags"><span class="pc-read">阅读全文 →</span></div>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
 
       {% if site.posts.size == 0 %}
       <div style="padding:40px 0;color:var(--text-mute)">
         还没有文章。在 <code>_posts/</code> 目录里新建一个 <code>2026-01-01-hello.md</code> 就能看到效果。
       </div>
+      {% endif %}
+
+      {% if site.posts.size > site.home_posts_limit %}
+      <a class="btn btn-ghost more-btn" href="{{ '/archive/' | relative_url }}">查看全部 {{ site.posts.size }} 篇 →</a>
       {% endif %}
     </div>
 

@@ -16,29 +16,82 @@
 <meta property="og:description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
 <meta property="og:url" content="{{ page.url | absolute_url }}">
 <meta property="og:locale" content="zh_CN">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="{% if page.og_image %}{{ page.og_image | absolute_url }}{% else %}{{ '/assets/img/og-default.png' | absolute_url }}{% endif %}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{% if page.og_image %}{{ page.og_image | absolute_url }}{% else %}{{ '/assets/img/og-default.png' | absolute_url }}{% endif %}">
+{% if page.layout == 'post' %}
+<meta property="article:published_time" content="{{ page.date | date_to_xmlschema }}">
+{% if page.updated %}<meta property="article:modified_time" content="{{ page.updated | date_to_xmlschema }}">{% endif %}
+{% for t in page.tags %}<meta property="article:tag" content="{{ t }}">
+{% endfor %}
+{% endif %}
 
-<!-- 主题色 -->
+<!-- 主题色（跟随系统的亮暗偏好） -->
 <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14171a" media="(prefers-color-scheme: dark)">
 
 <!-- 图标：一颗星 -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%232f6b5f' d='M12 2.2l2.86 6.06 6.64.72-4.97 4.44 1.41 6.53L12 16.66l-5.94 3.29 1.41-6.53L2.5 8.98l6.64-.72z'/%3E%3C/svg%3E">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/img/icon-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+
+<!-- 字体：衬线展示字 Noto Serif SC（loli 镜像，国内可用；加载失败时回退系统衬线） -->
+<link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;600;700;900&display=swap">
 
 <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ '/feed.xml' | relative_url }}">
+<link rel="sitemap" type="application/xml" href="{{ '/sitemap.xml' | relative_url }}">
 
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/css/syntax.css' | relative_url }}">
 
-<!-- 主题预设：在渲染前定好 data-theme，避免闪白 -->
+<!-- 结构化数据（SEO） -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": {{ site.title | jsonify }},
+  "url": "{{ site.url }}{{ site.baseurl }}/",
+  "description": {{ site.description | jsonify }},
+  "inLanguage": "zh-CN",
+  "author": { "@type": "Person", "name": {{ site.author | jsonify }} },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "{{ site.url }}{{ site.baseurl }}/search/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+{% if page.layout == 'post' %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": {{ page.title | jsonify }},
+  "description": {{ page.description | default: page.excerpt | strip_html | strip_newlines | truncate: 150 | jsonify }},
+  "datePublished": "{{ page.date | date_to_xmlschema }}",
+  "dateModified": "{{ page.updated | default: page.date | date_to_xmlschema }}",
+  "inLanguage": "zh-CN",
+  "author": { "@type": "Person", "name": {{ site.author | jsonify }} },
+  "publisher": { "@type": "Person", "name": {{ site.author | jsonify }} },
+  "mainEntityOfPage": "{{ page.url | absolute_url }}",
+  "url": "{{ page.url | absolute_url }}",
+  "keywords": {{ page.tags | join: ", " | jsonify }}
+}
+</script>
+{% endif %}
+
+<!-- 主题预设：三态（亮 / 暗 / 跟随系统），渲染前定好，避免闪白 -->
 <script>
 (function () {
   try {
-    var t = localStorage.getItem('theme');
-    if (!t) {
-      t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-    }
-    document.documentElement.setAttribute('data-theme', t);
+    var mode = localStorage.getItem('theme') || 'auto';
+    var dark = mode === 'dark' ||
+      (mode === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var root = document.documentElement;
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    root.setAttribute('data-mode', mode);
   } catch (e) {}
 })();
 </script>

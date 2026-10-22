@@ -19,6 +19,33 @@
     <a class="btn btn-ghost" href="{{ '/about/' | relative_url }}" style="margin-top:14px;font-size:.86rem;padding:8px 16px">关于我 →</a>
   </div>
 
+  <!-- 站点统计 -->
+  <div class="widget">
+    <div class="widget-title">小站统计</div>
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <b>{{ site.posts.size }}</b>
+        <span>文章</span>
+      </div>
+      <div class="stat-cell">
+        <b>{{ site.tags.size }}</b>
+        <span>标签</span>
+      </div>
+      <div class="stat-cell">
+        <b>{% assign tw = 0 %}{% for p in site.posts %}{% assign tw = tw | plus: p.content | strip_html | strip_newlines | size %}{% endfor %}{{ tw }}</b>
+        <span>总字数</span>
+      </div>
+      <div class="stat-cell">
+        <b>{% assign st = site.data.site.started | date: '%s' %}{% assign nt = 'now' | date: '%s' %}{{ nt | minus: st | divided_by: 86400 }}</b>
+        <span>运行天数</span>
+      </div>
+    </div>
+    <button class="btn btn-ghost random-btn" type="button" id="random-btn-side" style="width:100%;justify-content:center;margin-top:14px;font-size:.86rem">
+      <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+      随便看看
+    </button>
+  </div>
+
   <!-- 标签云 -->
   <div class="widget">
     <div class="widget-title">标签</div>

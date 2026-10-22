@@ -1,0 +1,162 @@
+---
+layout: page
+title: 站点导航
+description: 全站页面与文章目录
+permalink: /nav/
+---
+
+<div class="sitemap">
+
+  <section class="sm-block">
+    <h2>页面</h2>
+    <div class="sm-pages">
+      <a class="sm-page" href="{{ '/' | relative_url }}">
+        <span class="sm-icon">⌂</span>
+        <span><b>首页</b><em>最新文章与动态</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/archive/' | relative_url }}">
+        <span class="sm-icon">▤</span>
+        <span><b>归档</b><em>全部 {{ site.posts.size }} 篇文章</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/tags/' | relative_url }}">
+        <span class="sm-icon">✦</span>
+        <span><b>标签</b><em>按主题浏览</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/search/' | relative_url }}">
+        <span class="sm-icon">⌕</span>
+        <span><b>搜索</b><em>全文检索，支持拼音</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/lab/' | relative_url }}">
+        <span class="sm-icon">⚗</span>
+        <span><b>实验室</b><em>好玩的小页面</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/friends/' | relative_url }}">
+        <span class="sm-icon">♡</span>
+        <span><b>友链</b><em>朋友们的小站</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/books/' | relative_url }}">
+        <span class="sm-icon">▣</span>
+        <span><b>书单</b><em>在读与想读</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/timeline/' | relative_url }}">
+        <span class="sm-icon">◷</span>
+        <span><b>时间线</b><em>博客与生活</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/about/' | relative_url }}">
+        <span class="sm-icon">☺</span>
+        <span><b>关于</b><em>我是谁，以及这个博客</em></span>
+      </a>
+      <a class="sm-page" href="{{ '/feed.xml' | relative_url }}">
+        <span class="sm-icon">≣</span>
+        <span><b>RSS</b><em>订阅更新</em></span>
+      </a>
+    </div>
+  </section>
+
+  <section class="sm-block">
+    <h2>文章</h2>
+    {% assign posts_by_year = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+    <div class="sm-years">
+      {% for year in posts_by_year %}
+      <div class="sm-year">
+        <div class="sm-year-label">{{ year.name }}<span>{{ year.items.size }} 篇</span></div>
+        <ul>
+          {% for post in year.items %}
+          <li><a href="{{ post.url | relative_url }}">{{ post.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="sm-block">
+    <h2>实验室</h2>
+    <div class="sm-pages">
+      <a class="sm-page" href="{{ '/lab/love.html' | relative_url }}"><span class="sm-icon">♥</span><span><b>爱心动画</b><em>Canvas 粒子</em></span></a>
+      <a class="sm-page" href="{{ '/lab/love1.html' | relative_url }}"><span class="sm-icon">♥</span><span><b>爱心动画 · 其二</b><em>另一颗心跳</em></span></a>
+      <a class="sm-page" href="{{ '/lab/pdf-viewer.html' | relative_url }}"><span class="sm-icon">▤</span><span><b>PDF 阅读器</b><em>本地阅读，不上传</em></span></a>
+      <a class="sm-page" href="{{ '/lab/pelican.html' | relative_url }}"><span class="sm-icon">🚲</span><span><b>鹈鹕骑自行车</b><em>SVG 动画</em></span></a>
+      <a class="sm-page" href="{{ '/lab/cabin.html' | relative_url }}"><span class="sm-icon">🏡</span><span><b>林间小屋</b><em>A Cabin in the Forest</em></span></a>
+      <a class="sm-page" href="{{ '/lab/wenyun_shanhe.html' | relative_url }}"><span class="sm-icon">🏡</span><span><b>文韵山河 · 洪州道韵</b><em>代码水墨动画</em></span></a>
+      <a class="sm-page" href="{{ '/lab/jxstnu.html' | relative_url }}"><span class="sm-icon">🏫</span><span><b>三维校园</b><em>Three.js 场景</em></span></a>
+      <a class="sm-page" href="{{ '/lab/vln.html' | relative_url }}"><span class="sm-icon">📚</span><span><b>VLN-CE 研究资料库</b><em>论文与工具检索</em></span></a>
+    </div>
+  </section>
+
+</div>
+
+<style>
+  .sm-block { margin-bottom: 44px; }
+  .sm-block h2 {
+    font-size: 1.15rem;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sm-block h2::before {
+    content: "";
+    width: 3px; height: 16px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+  .sm-pages {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .sm-page {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    color: var(--text);
+    transition: all .2s var(--ease);
+  }
+  .sm-page:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+  .sm-icon {
+    flex: none;
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 1.05rem;
+  }
+  .sm-page:hover .sm-icon { background: var(--accent); color: #fff; }
+  .sm-page b { display: block; font-size: .95rem; }
+  .sm-page em { display: block; font-style: normal; font-size: .78rem; color: var(--text-mute); margin-top: 1px; }
+
+  .sm-years {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 18px;
+  }
+  .sm-year {
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+  .sm-year-label {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .sm-year-label span { font-size: .74rem; color: var(--text-mute); font-family: var(--font-sans); font-weight: 400; }
+  .sm-year ul { list-style: none; margin: 0; padding: 0; }
+  .sm-year li { padding: 5px 0; }
+  .sm-year li a { color: var(--text-soft); font-size: .92rem; }
+  .sm-year li a:hover { color: var(--accent); }
+</style>

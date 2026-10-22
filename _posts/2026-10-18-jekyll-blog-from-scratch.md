@@ -5,6 +5,9 @@ date: 2026-10-18 11:40:00 +0800
 categories: [技术]
 tags: [Jekyll, GitHub Pages, 博客]
 description: "不装主题，从空目录开始搭一个能用的博客：目录结构、布局、数据文件、RSS、搜索。"
+pinned: true
+series: 搭站笔记
+updated: 2026-10-22
 ---
 
 这篇记录本站的搭建过程。目标很明确：**不依赖任何主题，从空目录开始，

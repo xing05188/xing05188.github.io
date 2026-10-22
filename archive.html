@@ -6,6 +6,19 @@ permalink: /archive/
 ---
 
 {% assign posts_by_year = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+{% assign max_count = 1 %}
+{% for year in posts_by_year %}{% if year.items.size > max_count %}{% assign max_count = year.items.size %}{% endif %}{% endfor %}
+
+<!-- 年度产量图 -->
+<div class="archive-chart" aria-label="每年文章数量">
+  {% for year in posts_by_year %}
+  <div class="bar-col">
+    <span class="bar-num">{{ year.items.size }}</span>
+    <div class="bar" data-h="{{ year.items.size | times: 100 | divided_by: max_count }}%"></div>
+    <span class="bar-label">{{ year.name }}</span>
+  </div>
+  {% endfor %}
+</div>
 
 {% if site.posts.size == 0 %}
 <p style="color:var(--text-mute)">还没有文章。</p>
@@ -18,7 +31,7 @@ permalink: /archive/
   {% for post in year.items %}
   <a class="archive-row" href="{{ post.url | relative_url }}">
     <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%m-%d" }}</time>
-    <span class="ar-title">{{ post.title }}</span>
+    <span class="ar-title">{{ post.title }}{% if post.pinned %} 📌{% endif %}</span>
     {% if post.categories.first %}<span class="ar-cat">{{ post.categories.first }}</span>{% endif %}
   </a>
   {% endfor %}
@@ -28,5 +41,6 @@ permalink: /archive/
 <div style="margin-top:30px;font-size:.9rem;color:var(--text-mute)">
   共 {{ site.posts.size }} 篇 ·
   <a href="{{ '/tags/' | relative_url }}">按标签浏览</a> ·
+  <a href="{{ '/timeline/' | relative_url }}">时间线</a> ·
   <a href="{{ '/feed.xml' | relative_url }}">RSS 订阅</a>
 </div>

@@ -1,6 +1,6 @@
 # ============================================================
 #  星记 · 站点配置
-#  技术栈：Jekyll + GitHub Pages（零插件依赖）
+#  技术栈：Jekyll + GitHub Pages（零外部主题依赖）
 #  写新文章：在 _posts/ 下新建 2026-01-01-title.md 即可
 # ============================================================
 
@@ -31,6 +31,9 @@ nav:
   - { name: 归档, url: "/archive/" }
   - { name: 标签, url: "/tags/" }
   - { name: 实验室, url: "/lab/" }
+  - { name: 书单, url: "/books/" }
+  - { name: 友链, url: "/friends/" }
+  - { name: 时间线, url: "/timeline/" }
   - { name: 关于, url: "/about/" }
 
 # ---------- 文章链接格式 ----------
@@ -44,6 +47,13 @@ kramdown:
   auto_ids: true
   toc_levels: 2..3
   syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
+
+# ---------- 插件（均在 GitHub Pages 支持列表内） ----------
+plugins:
+  - jemoji
 
 # ---------- 默认值 ----------
 defaults:
@@ -62,6 +72,7 @@ exclude:
   - vendor
   - .codebuddy
   - .gitignore
+  - scripts
 
 # ---------- 首页文章展示上限 ----------
 home_posts_limit: 20

@@ -1,6 +1,22 @@
 <div class="progress-bar"></div>
 
 <header class="site-header">
+
+  <!-- 公告栏（可在 _data/site.yml 关闭或改文案） -->
+  {% if site.data.site.notice.enabled %}
+  {% assign n = site.data.site.notice %}
+  <div class="notice-bar" id="notice-bar" data-notice-id="{{ n.id }}">
+    <div class="wrap notice-inner">
+      <span class="notice-icon" aria-hidden="true">✦</span>
+      <span class="notice-text">{{ n.text }}</span>
+      {% if n.link %}<a class="notice-link" href="{{ n.link | relative_url }}">{{ n.link_text | default: "了解详情" }}</a>{% endif %}
+      <button class="notice-close" type="button" aria-label="关闭公告">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="wrap">
     <nav class="nav" aria-label="主导航">
       <a class="brand" href="{{ '/' | relative_url }}">
@@ -17,13 +33,18 @@
       </ul>
 
       <div class="nav-tools">
+        <button class="icon-btn palette-btn" type="button" aria-label="命令面板" title="命令面板（Ctrl/⌘ + K）">
+          <svg viewBox="0 0 24 24"><path d="M8 6L4 12l4 6M16 6l4 6-4 6"/></svg>
+        </button>
+
         <a class="icon-btn" href="{{ '/search/' | relative_url }}" aria-label="搜索" title="搜索（按 / 键）">
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         </a>
 
-        <button class="icon-btn theme-toggle" type="button" aria-label="切换主题">
-          <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.8 6.8 0 0 0 9.8 9.8z"/></svg>
+        <button class="icon-btn theme-toggle" type="button" aria-label="切换主题" title="主题：亮色 / 暗色 / 跟随系统">
           <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.8 6.8 0 0 0 9.8 9.8z"/></svg>
+          <svg class="icon-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg>
         </button>
 
         <button class="icon-btn menu-btn" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="nav-links">

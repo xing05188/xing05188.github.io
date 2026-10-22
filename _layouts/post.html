@@ -8,7 +8,8 @@ layout: default
 
 <div class="wrap">
   <div class="measure">
-    <article>
+
+    <article class="post" data-title="{{ page.title }}" data-url="{{ page.url | relative_url }}">
 
       <header class="post-header">
         <a class="crumb" href="{{ '/' | relative_url }}">
@@ -16,10 +17,19 @@ layout: default
           返回首页
         </a>
 
+        {% if page.pinned %}
+        <span class="pin-badge in-title" title="置顶文章">
+          <svg viewBox="0 0 24 24"><path d="M12 2v8M8.5 4.5h7M12 10c-3 1.5-6 4.5-6 8h12c0-3.5-3-6.5-6-8z"/></svg>
+          置顶
+        </span>
+        {% endif %}
+
         <h1 class="post-title">{{ page.title }}</h1>
 
         <div class="post-meta">
           <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%Y 年 %m 月 %d 日" }}</time>
+          <span class="sep">·</span>
+          <span>{{ chars }} 字</span>
           <span class="sep">·</span>
           <span>约 {{ read_min }} 分钟</span>
           {% if page.categories.first %}
@@ -31,19 +41,102 @@ layout: default
           <span>更新于 {{ page.updated | date: "%Y-%m-%d" }}</span>
           {% endif %}
         </div>
+
+        {% if page.cover %}
+        <figure class="post-cover">
+          <img src="{{ page.cover | relative_url }}" alt="{{ page.title }} 封面" loading="eager">
+        </figure>
+        {% endif %}
+
+        {% if page.series %}
+        {% assign series_posts = site.posts | where_exp: "p", "p.series == page.series" | sort: "date" %}
+        <div class="series-strip">
+          <span class="series-label">系列文章</span>
+          <div class="series-links">
+            {% for sp in series_posts %}
+            <a href="{{ sp.url | relative_url }}" class="{% if sp.url == page.url %}is-current{% endif %}">
+              {{ forloop.index }}. {{ sp.title }}{% if sp.url == page.url %} ◂{% endif %}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
       </header>
 
       <div class="post-content">
         {{ content }}
       </div>
 
+      <!-- 点赞 + 分享 -->
+      <div class="post-actions">
+        <button class="like-btn" type="button" id="like-btn" data-key="like:{{ page.url }}" aria-label="点赞这篇文章">
+          <svg viewBox="0 0 24 24"><path d="M12 20.5S3.5 15.4 3.5 9.4A4.6 4.6 0 0 1 12 6.6a4.6 4.6 0 0 1 8.5 2.8c0 6-8.5 11.1-8.5 11.1z"/></svg>
+          <span class="like-count" id="like-count">0</span>
+          <span class="like-text">赞</span>
+        </button>
+
+        <div class="share-row">
+          <span class="share-label">分享到</span>
+          <button class="share-btn" type="button" data-share="copy" title="复制链接" aria-label="复制链接">
+            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+          </button>
+          <a class="share-btn" target="_blank" rel="noopener noreferrer"
+             href="https://service.weibo.com/share/share.php?url={{ page.url | absolute_url | uri_escape }}&title={{ page.title | uri_escape }}"
+             title="分享到微博" aria-label="分享到微博">
+            <svg viewBox="0 0 24 24"><path d="M9.5 20c-3.6 0-6.5-1.8-6.5-4.2 0-1.4.9-2.9 2.4-4.1 2-1.6 4.4-2.3 5.3-1.2.4.5.3 1.2.1 1.9-.1.3.3.2.3.2 1.9-.8 3.6-.9 4.2.1.3.5.2 1.2 0 1.9-.1.3.1.4.3.4 1.2.4 2.4 1.2 2.4 2.6 0 1.9-2.6 3.4-6.4 3.4z"/><path d="M18.5 5.5c1.9.2 3.3 1.9 3.1 3.8M17.8 8.2c.8.1 1.4.9 1.2 1.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </a>
+          <a class="share-btn" target="_blank" rel="noopener noreferrer"
+             href="https://x.com/intent/post?text={{ page.title | uri_escape }}&url={{ page.url | absolute_url | uri_escape }}"
+             title="分享到 X" aria-label="分享到 X">
+            <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </a>
+          <a class="share-btn" target="_blank" rel="noopener noreferrer"
+             href="https://t.me/share/url?url={{ page.url | absolute_url | uri_escape }}&text={{ page.title | uri_escape }}"
+             title="分享到 Telegram" aria-label="分享到 Telegram">
+            <svg viewBox="0 0 24 24"><path d="M21.5 4.3L2.9 11.4c-.9.3-.9 1.6 0 1.9l4.4 1.6 1.7 5.3c.2.7 1.1.8 1.6.3l2.4-2.4 4.3 3.2c.6.4 1.5.1 1.7-.6l3.9-15.2c.2-.8-.6-1.5-1.4-1.2z"/></svg>
+          </a>
+        </div>
+      </div>
+
       <footer class="post-footer">
 
         {% if page.tags.first %}
-        <div class="post-tags" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px">
+        <div class="post-tags">
           {% for t in page.tags %}
-          <a class="tag-mini" href="{{ '/tags/' | relative_url }}#{{ t | slugify }}">{{ t }}</a>
+          <a class="tag-mini" href="{{ '/tags/' | relative_url }}#{{ t | slugify }}"># {{ t }}</a>
           {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- 版权卡片 -->
+        <div class="license-card">
+          <div class="lc-title">版权与转载</div>
+          <p>本文首发于 <a href="{{ page.url | absolute_url }}">{{ site.title }}</a>，采用 <b>CC BY-NC-SA 4.0</b> 协议 —— 转载请注明作者与出处，欢迎交流。</p>
+        </div>
+
+        <!-- 相关文章（按共同标签排序） -->
+        {% assign related = site.posts | where_exp: "p", "p.url != page.url" %}
+        {% if page.tags.first %}
+        <div class="related-posts">
+          <div class="widget-title" style="margin-bottom:14px">相关文章</div>
+          <div class="related-list">
+            {% assign shown = 0 %}
+            {% for p in related %}
+              {% if shown < 3 %}
+                {% assign hit = 0 %}
+                {% for t in page.tags %}{% if p.tags contains t %}{% assign hit = hit | plus: 1 %}{% endif %}{% endfor %}
+                {% if hit > 0 %}
+                <a class="related-item" href="{{ p.url | relative_url }}">
+                  <span class="ri-cat">{{ p.categories.first }}</span>
+                  <span class="ri-title">{{ p.title }}</span>
+                  <span class="ri-date">{{ p.date | date: "%Y-%m-%d" }}</span>
+                </a>
+                {% assign shown = shown | plus: 1 %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          </div>
+          {% if shown == 0 %}<p style="font-size:.9rem;color:var(--text-mute)">暂时没有相关文章，去看看 <a href="{{ '/archive/' | relative_url }}">归档</a> 吧。</p>{% endif %}
         </div>
         {% endif %}
 
@@ -68,20 +161,32 @@ layout: default
         </div>
 
         <!--
-          想开启评论（giscus，基于 GitHub Discussions，免费无广告）：
-          1. 在本仓库 Settings → Features 勾选 Discussions
-          2. 安装 https://github.com/apps/giscus
-          3. 在 https://giscus.app 生成你的 repo-id / category-id，替换下面两处后取消注释
-        <script src="https://giscus.app/client.js"
-          data-repo="{{ site.owner.github }}/{{ site.owner.github }}.github.io"
-          data-repo-id="YOUR_REPO_ID"
-          data-category="Announcements"
-          data-category-id="YOUR_CATEGORY_ID"
-          data-mapping="pathname"
-          data-theme="preferred_color_scheme"
-          data-lang="zh-CN"
-          crossorigin="anonymous" async>
-        </script>
+          评论系统（二选一，默认关闭）：
+
+          A. giscus（GitHub Discussions，免费无广告）——推荐
+             1. 仓库 Settings → Features 勾选 Discussions
+             2. 安装 https://github.com/apps/giscus
+             3. 到 https://giscus.app 生成 repo-id / category-id，替换下面两处并取消注释
+        <div class="comments">
+          <script src="https://giscus.app/client.js"
+            data-repo="{{ site.owner.github }}/{{ site.owner.github }}.github.io"
+            data-repo-id="YOUR_REPO_ID"
+            data-category="Announcements"
+            data-category-id="YOUR_CATEGORY_ID"
+            data-mapping="pathname"
+            data-theme="preferred_color_scheme"
+            data-lang="zh-CN"
+            crossorigin="anonymous" async>
+          </script>
+        </div>
+        -->
+
+        <!--
+          B. utterances（GitHub Issues，更轻）
+             <script src="https://utteranc.es/client.js"
+               repo="{{ site.owner.github }}/{{ site.owner.github }}.github.io"
+               issue-term="pathname" theme="preferred-color-scheme" crossorigin="anonymous" async>
+             </script>
         -->
       </footer>
 

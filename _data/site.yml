@@ -1,0 +1,62 @@
+# ============================================================
+#  星记 · 扩展站点数据
+#  这里放「不是文章、但想随时改」的内容：公告、友链、书单、时间线
+# ============================================================
+
+# ---------- 建站日期（用于计算"已运行 N 天"） ----------
+started: 2025-06-27
+
+# ---------- 顶部公告栏 ----------
+# enabled: false 可临时关掉；改 text 后老访客会重新看到（按内容判断是否已读）
+notice:
+  enabled: true
+  id: 2026-10-upgrade
+  text: "博客刚完成一次大升级：命令面板、星空首页、书单 / 友链 / 时间线页上线了。"
+  link: /about/
+  link_text: "看看更新了什么 →"
+
+# ---------- 社交账号（侧栏与关于页共用） ----------
+social:
+  github: xing05188
+  email: 2351289@tongji.edu.cn
+  # 留空则不显示对应图标
+  zhihu: ""
+  bilibili: ""
+  twitter: ""
+  telegram: ""
+
+# ---------- 友链（/friends/ 页） ----------
+# status: active 正常展示 · sleep 暂停互访 · lost 已失联
+friends:
+  - name: 待添加
+    url: https://example.com
+    avatar: ""
+    desc: 把第一位朋友加进来：在 _data/site.yml 里照格式改就行。
+    status: active
+
+# ---------- 书单（/books/ 页） ----------
+# status: reading 在读 · done 读完 · wish 想读
+books:
+  - title: 人月神话
+    author: Frederick P. Brooks Jr.
+    status: done
+    rating: 5
+    note: 软件工程的“第一定律”书。博客里有读书笔记。
+    link: /posts/mythical-man-month/
+
+# ---------- 生活时间线（/timeline/ 页） ----------
+# kind: post 关联文章（自动带标题链接）· event 普通事件
+timeline:
+  - date: 2025-06-27
+    kind: event
+    title: 博客上线
+    text: 用 Jekyll 默认主题搭了个半成品，第一篇文章只有四百字。
+  - date: 2026-10-18
+    kind: post
+    post: /posts/starting-over/
+    title: 重新开始写博客
+    text: 把站点整个重写，想清楚了要写什么。
+  - date: 2026-10-22
+    kind: event
+    title: 无敌升级完成
+    text: 星空首页、命令面板、拼音搜索、书单 / 友链 / 时间线 / 站点导航、PWA、评论区就绪 —— 这次真的“无限优化”了一轮。

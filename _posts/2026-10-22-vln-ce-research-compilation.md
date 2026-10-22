@@ -5,6 +5,7 @@ date: 2026-10-22 20:00:00 +0800
 categories: [技术]
 tags: [VLN, VLN-CE, 具身智能, Video-LLM, 论文笔记]
 description: "连续环境视觉语言导航的 65 条资料：任务定义与基准、Habitat 平台、方法谱系、Video-LLM/VLA、多模态感知、记忆与加速、评测协议。"
+pinned: true
 ---
 
 **主题**：连续环境视觉语言导航 + Video-LLM/VLA 导航 + 多模态感知 + 记忆与推理加速 + 评测协议  

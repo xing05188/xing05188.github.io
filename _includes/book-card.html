@@ -1,0 +1,16 @@
+{% comment %}书单卡片（被 books.md include）{% endcomment %}
+<div class="book-card">
+  <div class="book-cover" aria-hidden="true">{{ include.post.title | slice: 0 }}</div>
+  <div class="book-body">
+    <div class="book-title">
+      {% if include.post.link %}<a href="{{ include.post.link | relative_url }}">{{ include.post.title }}</a>{% else %}{{ include.post.title }}{% endif %}
+    </div>
+    <div class="book-author">{{ include.post.author }}</div>
+    {% if include.post.note %}<p class="book-note">{{ include.post.note }}</p>{% endif %}
+    {% if include.post.rating %}
+    <div class="book-stars" aria-label="评分 {{ include.post.rating }} / 5">
+      {% for i in (1..5) %}{% if i <= include.post.rating %}★{% else %}<span class="off">★</span>{% endif %}{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
