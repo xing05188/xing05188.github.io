@@ -161,32 +161,28 @@ layout: default
         </div>
 
         <!--
-          评论系统（二选一，默认关闭）：
-
-          A. giscus（GitHub Discussions，免费无广告）——推荐
-             1. 仓库 Settings → Features 勾选 Discussions
-             2. 安装 https://github.com/apps/giscus
-             3. 到 https://giscus.app 生成 repo-id / category-id，替换下面两处并取消注释
+          评论系统（giscus · 基于 GitHub Discussions，免费无广告）
+          Discussions 已在仓库开启，repo-id / category-id 已填好，
+          只差最后一步：安装 giscus 应用（一次性，约 10 秒）
+            1. 打开 https://github.com/apps/giscus ，Install，仅授权本仓库
+            2. 把下面这段的首尾注释标记去掉（即保留中间的 div 与 script）
         <div class="comments">
           <script src="https://giscus.app/client.js"
-            data-repo="{{ site.owner.github }}/{{ site.owner.github }}.github.io"
-            data-repo-id="YOUR_REPO_ID"
+            data-repo="xing05188/xing05188.github.io"
+            data-repo-id="R_kgDOPCQkOQ"
             data-category="Announcements"
-            data-category-id="YOUR_CATEGORY_ID"
+            data-category-id="DIC_kwDOPCQkOc4DJVrI"
             data-mapping="pathname"
+            data-strict="1"
+            data-reactions-enabled="1"
+            data-emit-metadata="0"
+            data-input-position="top"
             data-theme="preferred_color_scheme"
             data-lang="zh-CN"
+            data-loading="lazy"
             crossorigin="anonymous" async>
           </script>
         </div>
-        -->
-
-        <!--
-          B. utterances（GitHub Issues，更轻）
-             <script src="https://utteranc.es/client.js"
-               repo="{{ site.owner.github }}/{{ site.owner.github }}.github.io"
-               issue-term="pathname" theme="preferred-color-scheme" crossorigin="anonymous" async>
-             </script>
         -->
       </footer>
 

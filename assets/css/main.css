@@ -1054,10 +1054,12 @@ a.tag-mini:hover { color: var(--accent); border-color: var(--accent); }
 .post-content th { background: var(--bg-soft); font-weight: 600; }
 .post-content tbody tr:nth-child(even) { background: var(--bg-soft); }
 
+.post-content img, .page-body img {
+  cursor: zoom-in;
+}
 .post-content figure { margin: 1.8em 0; }
 .post-content figure img {
   box-shadow: var(--shadow-md);
-  cursor: zoom-in;
   transition: transform .3s var(--ease), box-shadow .3s var(--ease);
 }
 .post-content figure img:hover { transform: scale(1.01); box-shadow: var(--shadow-lg); }
@@ -1568,7 +1570,6 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 2
   transition: opacity .2s var(--ease);
   pointer-events: none;
 }
-.highlight:hover .code-lang { opacity: 1; }
 .highlight:hover .code-lang { opacity: 0; }
 
 /* 代码折叠（超过阈值的长代码块） */

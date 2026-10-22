@@ -14,20 +14,7 @@
   background: transparent;
 }
 
-/* 语言标签（由 main.js 注入） */
-.code-lang {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  font-family: var(--font-mono);
-  font-size: .7rem;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--text-mute);
-  opacity: .75;
-  pointer-events: none;
-  user-select: none;
-}
+/* 语言标签样式见 main.css（.code-lang），此处不再重复定义 */
 
 /* ---------- 亮色主题 ---------- */
 .highlight { color: #24292f; }
