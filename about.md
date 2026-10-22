@@ -53,6 +53,23 @@ permalink: /about/
 写文章的方式：在 `_posts/` 目录新建一个 `2026-10-18-your-title.md`，
 写几行 front matter，然后开始写正文。推到 GitHub，一分钟后就能看到。
 
+当然，更舒服的方式是用**工作台**（[/workbench/](/workbench/)，页脚也有入口）——
+一个密码进入的管理员界面，不用写代码、不用碰 Git：
+
+| 模块 | 能做什么 |
+| --- | --- |
+| 仪表盘 | 站点数据一览、最近文章、六个快捷操作 |
+| 文章 | 新建 / 编辑 / 删除文章，front matter 表单化，Markdown 工具栏，实时预览，<kbd>Ctrl</kbd>+<kbd>S</kbd> 保存，草稿自动存在本机 |
+| 统计 | 字数排行、分类与标签构成、站点健康检查（逐个路径探活） |
+| 媒体库 | 拖拽上传图片（>900KB 自动压缩），一键插入正文 |
+| 设置 | 公告栏、社交账号、友链、书单、时间线、每日一句、导航菜单的可视化编辑 |
+| 构建 | Pages 构建状态与最近提交 |
+
+工作台的密码只是第一道门（默认 `xingji2026`，可在设置里修改）；真正的写入
+由 GitHub Token 授权 —— 在 [github.com/settings/tokens](https://github.com/settings/tokens)
+创建 Fine-grained token，仅授权本仓库的 `Contents: Read and write`，
+Token 只保存在当前标签页内存，关闭即失效。
+
 front matter 里可以用这些小零件：
 
 ```yaml

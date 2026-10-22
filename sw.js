@@ -3,7 +3,7 @@
    策略：静态资源 cache-first（更新后自动换新）；页面 network-first，
    离线时回退到缓存；导航失败时展示缓存的 404 页。
    ============================================================ */
-var VERSION = 'xingji-v3';
+var VERSION = 'xingji-v4';
 var SHELL = [
   '/',
   '/archive/',
@@ -53,6 +53,10 @@ self.addEventListener('fetch', function (e) {
 
   var url = new URL(req.url);
   if (url.origin !== location.origin) return;
+
+  // 管理台（/workbench/ 及其专属资源）不缓存、不拦截
+  if (url.pathname.indexOf('/workbench') === 0 ||
+      /\/assets\/(css|js)\/(workbench|md)\.(css|js)$/.test(url.pathname)) return;
 
   // 静态资源：cache-first
   if (/\.(css|js|png|svg|woff2?|webmanifest)$/.test(url.pathname)) {

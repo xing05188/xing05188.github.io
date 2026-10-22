@@ -1,0 +1,24 @@
+# ============================================================
+#  星记 · 工作台配置（/workbench/ 管理员界面）
+# ============================================================
+
+# ---------- 访问密码 ----------
+# 这里是「xingji2026」的 SHA-256 哈希（不可逆）。
+# 密码只是第一道门（防止随手点开）；真正的写入由 GitHub Token 授权。
+# 修改密码：进入工作台 → 设置 → 访问密码（需要先连接 Token），
+# 或本地执行  printf '你的新密码' | sha256sum  后替换下面的值。
+password_sha256: d61f13de101c06fc1bfd66ed565bedc8a3f8603184763f438e75b9f7ea717558
+
+# ---------- 仓库信息（一般不用改） ----------
+repo: xing05188/xing05188.github.io
+branch: main
+posts_dir: _posts
+
+# ---------- 新文章默认 front matter ----------
+new_post_defaults:
+  categories: "随笔"
+  tags: ""
+  description: ""
+
+# ---------- 提示文案 ----------
+token_help: "在 github.com/settings/tokens 创建 Fine-grained token：仅授权本仓库，权限勾选 Contents: Read and write 与 Pages: Read。Token 只保存在当前标签页内存，关闭即失效。"

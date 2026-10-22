@@ -90,13 +90,30 @@ cover: ""              # 可选：头图
 
 ---
 
+## 工作台（/workbench/）
+
+不想写代码也能管理博客：打开 https://xing05188.github.io/workbench/
+（页脚「工作台」入口），输入访问密码即可进入。
+
+- **默认密码**：`xingji2026`（SHA-256 哈希存在 `_data/workbench.yml`，可在工作台「设置 → 访问密码」里修改）
+- **发布文章**：还需连接 GitHub Token —— 在 [github.com/settings/tokens](https://github.com/settings/tokens)
+  创建 Fine-grained token，仅授权本仓库，权限勾选 `Contents: Read and write`。
+  Token 只保存在当前标签页的 sessionStorage，关闭页面即失效
+- 功能：文章增删改（表单化 front matter + Markdown 工具栏 + 实时预览 + Ctrl+S）、
+  图片拖拽上传（自动压缩）、公告栏 / 友链 / 书单 / 时间线 / 每日一句 / 导航菜单可视化编辑、
+  站点数据统计与健康检查、Pages 构建状态
+- 草稿自动保存在浏览器 localStorage，断网也不丢；`/workbench/` 已加 `noindex` 且不进 Service Worker 缓存
+
+---
+
 ## 目录结构
 
 ```
 .
 ├── _config.yml           站点配置：标题、作者、导航、链接格式
 ├── _data/
-│   └── site.yml          公告 / 友链 / 书单 / 时间线 / 每日一句 等数据
+│   ├── site.yml          公告 / 友链 / 书单 / 时间线 / 每日一句 等数据
+│   └── workbench.yml     工作台配置（访问密码哈希 / 仓库信息 / 新文章默认值）
 ├── _layouts/             布局模板
 │   ├── default.html      最外层骨架
 │   ├── home.html         首页（星空 Hero + 今日一句）
@@ -122,15 +139,20 @@ cover: ""              # 可选：头图
 ├── books.md              书单页
 ├── timeline.md           时间线页
 ├── nav.html              站点导航页
+├── workbench.html        工作台（管理员界面，密码 + GitHub Token）
 ├── about.md              关于页
 ├── 404.html              404（随机推荐文章）
 ├── feed.xml              RSS（全文输出）
 ├── sitemap.xml           站点地图
-├── robots.txt            爬虫协议
+├── robots.txt            爬虫协议（Disallow: /workbench/）
 ├── manifest.webmanifest  PWA 清单
 ├── sw.js                Service Worker（离线缓存 + 更新提示）
 └── lab/                  老站点保留的小页面
 ```
+
+`assets/js/` 下：`main.js`（前台交互）、`workbench.js`（工作台应用）、
+`md.js`（工作台内置迷你 Markdown 渲染器）、`posts-data.js` / `pinyin-data.js`（构建生成）、
+`assets/css/` 下：`main.css`（前台）、`workbench.css`（工作台）。
 
 ---
 
