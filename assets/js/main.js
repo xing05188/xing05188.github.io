@@ -6,7 +6,8 @@
         主页特效：标题逐字渐入 / 数字滚动 / 磁性按钮 / 卡片聚光灯+3D 倾斜 /
         星尘拖尾 / 首屏视差 / 星标伴生光标 / 流星雨彩蛋 /
         标题字符波浪 / 点赞粒子 / 彩蛋提示 /
-        华丽升级：星空鼠标透镜+冲击波 / Hero 电影感退场 / 环境辉光 / 星星雨
+        华丽升级：星空鼠标透镜+冲击波 / Hero 电影感退场 / 环境辉光 / 星星雨 /
+        桌宠联动：pet:theme（主题切换）/ pet:meteor（流星雨围观）
    ============================================================ */
 (function () {
   'use strict';
@@ -76,6 +77,8 @@
         btn.setAttribute('aria-label', mode === 'auto' ? '主题：跟随系统' : (dark ? '切换到亮色模式' : '切换到暗色模式'));
         btn.title = '主题：' + (mode === 'auto' ? '跟随系统' : (dark ? '暗色' : '亮色')) + '（点击切换）';
       }
+      // 通知星星人桌宠：主题变了
+      try { window.dispatchEvent(new CustomEvent('pet:theme', { detail: { dark: dark } })); } catch (e) {}
     }
 
     var mode = store.get('theme', 'auto');
@@ -1733,6 +1736,8 @@
       if (running && !force) return;   // 手动 wish / Konami 无视门闩，随时再召一场
       running = true;
       toast(isKonami ? '✦ 上古秘技已激活' : '✦ 流星雨来了');
+      // 通知星星人桌宠：出来围观流星雨
+      try { window.dispatchEvent(new CustomEvent('pet:meteor')); } catch (e) {}
       var count = isKonami ? 24 : 18;
       for (var i = 0; i < count; i++) {
         setTimeout(spawnMeteor, i * 110 + Math.random() * 90);

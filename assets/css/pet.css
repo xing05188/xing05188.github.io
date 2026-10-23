@@ -1,0 +1,386 @@
+/* ============================================================
+   星记 · 星星人桌宠（Star Buddy）
+   设计方向：一颗会打工、会犯困、会陪你看流星雨的小星星
+   —— 程序化 SVG 形象（零外部素材）/ 状态机驱动动画 /
+   主题三态自动取色 / 亲密度与等级成长
+   ============================================================ */
+
+/* ---------- 舞台：右下角常驻，JS 负责定位与记忆 ---------- */
+.pet-stage {
+  position: fixed;
+  left: 0; top: 0;
+  width: 132px; height: 132px;
+  z-index: 950;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity .45s var(--ease), transform .45s var(--ease-out);
+}
+.pet-stage[data-hidden="1"] {
+  opacity: 0;
+  transform: translateY(140%) scale(.6);
+  pointer-events: none;
+}
+/* 散步时给 left/top 加过渡（拖拽时不加，保证跟手） */
+.pet-stage.moving { transition: left .9s var(--ease), top .9s var(--ease), opacity .45s var(--ease), transform .45s var(--ease-out); }
+
+/* ---------- 形象本体（可拖拽） ---------- */
+.pet-figure-wrap {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  touch-action: none;
+}
+.pet-stage[data-state="drag"] .pet-figure-wrap { cursor: grabbing; }
+
+.pet-svg {
+  width: 100%; height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 10px 18px rgba(24, 20, 14, .18));
+  animation: pet-float 3.4s ease-in-out infinite;
+}
+[data-theme="dark"] .pet-svg { filter: drop-shadow(0 10px 22px rgba(0, 0, 0, .5)); }
+
+/* 星星本体 */
+.pet-star { fill: url(#petGrad); stroke: color-mix(in srgb, var(--gold) 62%, #6b4d08); stroke-width: 1.6; }
+.pet-star-hl { fill: rgba(255, 255, 255, .34); }
+.pet-shadow { fill: rgba(24, 20, 14, .16); }
+[data-theme="dark"] .pet-shadow { fill: rgba(0, 0, 0, .4); }
+
+/* 五官 */
+.pet-eyes circle, .pet-eyes path { fill: var(--text); }
+.pet-eyes .eye-line { fill: none; stroke: var(--text); stroke-width: 3.2; stroke-linecap: round; }
+.pet-blush { fill: #e0636f; opacity: .34; }
+.pet-mouth { fill: none; stroke: var(--text); stroke-width: 2.6; stroke-linecap: round; }
+.pet-mouth-fill { fill: var(--text); }
+.pet-glint { fill: #fff; }
+
+/* 四肢（transform-box: view-box 让 CSS 原点按 viewBox 坐标计算） */
+.pet-arm, .pet-leg { fill: none; stroke: color-mix(in srgb, var(--gold) 74%, #6b4d08); stroke-width: 4.6; stroke-linecap: round; }
+.pet-arm-l { transform-box: view-box; transform-origin: 38px 60px; }
+.pet-arm-r { transform-box: view-box; transform-origin: 102px 60px; }
+.pet-leg-l { transform-box: view-box; transform-origin: 64px 86px; }
+.pet-leg-r { transform-box: view-box; transform-origin: 76px 86px; }
+
+/* 表情切换：默认 idle，其余按 data-face 显示对应部件 */
+.pet-figure .eyes-open, .pet-figure .eyes-happy, .pet-figure .eyes-sleep,
+.pet-figure .eyes-love, .pet-figure .eyes-wow,
+.pet-figure .mouth-smile, .pet-figure .mouth-o, .pet-figure .mouth-open, .pet-figure .mouth-frown { display: none; }
+.pet-figure[data-face="idle"]    .eyes-open,
+.pet-figure[data-face="idle"]    .mouth-smile,
+.pet-figure[data-face="think"]   .eyes-open,
+.pet-figure[data-face="think"]   .mouth-smile,
+.pet-figure[data-face="greet"]   .eyes-happy,
+.pet-figure[data-face="greet"]   .mouth-smile,
+.pet-figure[data-face="work"]    .eyes-open,
+.pet-figure[data-face="work"]    .mouth-smile,
+.pet-figure[data-face="play"]    .eyes-happy,
+.pet-figure[data-face="play"]    .mouth-smile,
+.pet-figure[data-face="happy"]   .eyes-happy,
+.pet-figure[data-face="happy"]   .mouth-smile,
+.pet-figure[data-face="love"]    .eyes-love,
+.pet-figure[data-face="love"]    .mouth-smile,
+.pet-figure[data-face="eat"]     .eyes-happy,
+.pet-figure[data-face="eat"]     .mouth-open,
+.pet-figure[data-face="wow"]     .eyes-wow,
+.pet-figure[data-face="wow"]     .mouth-o,
+.pet-figure[data-face="sad"]     .eyes-sleep,
+.pet-figure[data-face="sad"]     .mouth-frown,
+.pet-figure[data-face="sleep"]   .eyes-sleep,
+.pet-figure[data-face="sleep"]   .mouth-smile,
+.pet-figure[data-face="celebrate"] .eyes-happy,
+.pet-figure[data-face="celebrate"] .mouth-open { display: block; }
+
+/* 眨眼（仅睁眼表情） */
+.pet-eyes-open { transform-box: view-box; transform-origin: 70px 60px; animation: pet-blink 4.6s infinite; }
+
+/* ---------- 状态动画 ---------- */
+@keyframes pet-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes pet-blink { 0%, 92%, 100% { transform: scaleY(1); } 94.5% { transform: scaleY(.08); } 97% { transform: scaleY(1); } }
+@keyframes pet-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes pet-wave { 0%,100% { transform: rotate(-16deg); } 50% { transform: rotate(18deg); } }
+@keyframes pet-jump {
+  0% { transform: translateY(0) rotate(0deg); }
+  30% { transform: translateY(-26px) rotate(14deg); }
+  55% { transform: translateY(0) rotate(-6deg); }
+  75% { transform: translateY(-10px) rotate(8deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+@keyframes pet-spin-celebrate { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.12); } 100% { transform: rotate(360deg) scale(1); } }
+@keyframes pet-shake { 0%,100% { transform: rotate(0deg); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
+@keyframes pet-walk-bob { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-7px); } 70% { transform: translateY(-2px); } }
+@keyframes pet-think-tilt { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes pet-squash { 0%,100% { transform: scaleY(1); } 40% { transform: scaleY(.82) scaleX(1.06); } }
+@keyframes pet-arm-swing-l { 0%,100% { transform: rotate(16deg); } 50% { transform: rotate(-14deg); } }
+@keyframes pet-arm-swing-r { 0%,100% { transform: rotate(-16deg); } 50% { transform: rotate(14deg); } }
+@keyframes pet-leg-swing-l { 0%,100% { transform: rotate(14deg); } 50% { transform: rotate(-12deg); } }
+@keyframes pet-leg-swing-r { 0%,100% { transform: rotate(-14deg); } 50% { transform: rotate(12deg); } }
+
+/* 待机：轻轻漂 */
+.pet-stage[data-state="idle"] .pet-svg,
+.pet-stage[data-state="greet"] .pet-svg { animation: pet-float 3.4s ease-in-out infinite; }
+/* 打招呼：挥右手 */
+.pet-stage[data-state="greet"] .pet-arm-r { animation: pet-wave 1s ease-in-out 3; }
+/* 睡觉：呼吸 + 闭眼 */
+.pet-stage[data-state="sleep"] .pet-svg { animation: pet-breathe 2.8s ease-in-out infinite; }
+/* 庆祝：星星转圈跳 */
+.pet-stage[data-state="celebrate"] .pet-svg { animation: pet-spin-celebrate .85s ease-in-out 3; }
+/* 思考：歪头 */
+.pet-stage[data-state="think"] .pet-svg { animation: pet-think-tilt 2.2s ease-in-out infinite; }
+/* 漫步：弹跳 + 摆臂摆腿 */
+.pet-stage[data-state="walk"] .pet-svg { animation: pet-walk-bob .5s ease-in-out infinite; }
+.pet-stage[data-state="walk"] .pet-arm-l { animation: pet-arm-swing-l .5s ease-in-out infinite; }
+.pet-stage[data-state="walk"] .pet-arm-r { animation: pet-arm-swing-r .5s ease-in-out infinite; }
+.pet-stage[data-state="walk"] .pet-leg-l { animation: pet-leg-swing-l .5s ease-in-out infinite; }
+.pet-stage[data-state="walk"] .pet-leg-r { animation: pet-leg-swing-r .5s ease-in-out infinite; }
+/* 难过：摇头 */
+.pet-stage[data-state="sad"] .pet-svg { animation: pet-shake .5s ease-in-out 2; }
+/* 进食：吧唧嘴 */
+.pet-stage[data-state="eat"] .pet-face { transform-box: view-box; transform-origin: 70px 70px; animation: pet-squash .28s ease-in-out 4; }
+/* 玩耍：小跳步 */
+.pet-stage[data-state="play"] .pet-svg { animation: pet-walk-bob .38s ease-in-out infinite; }
+/* 拖拽中：四肢张开（哇） */
+.pet-stage[data-state="drag"] .pet-arm-l { transform: rotate(28deg); }
+.pet-stage[data-state="drag"] .pet-arm-r { transform: rotate(-28deg); }
+.pet-stage[data-state="drag"] .pet-leg-l { transform: rotate(-16deg); }
+.pet-stage[data-state="drag"] .pet-leg-r { transform: rotate(16deg); }
+
+/* 工作中：轻微律动 */
+.pet-stage[data-state="work"] .pet-svg { animation: pet-float 2.6s ease-in-out infinite; }
+.pet-stage[data-state="work"][data-work="debug"] .pet-svg { animation: pet-shake .34s ease-in-out infinite; }
+.pet-stage[data-state="work"][data-work="stretch"] .pet-svg { animation: pet-breathe 1.2s ease-in-out infinite; }
+.pet-stage[data-state="work"][data-work="music"] .pet-svg { animation: pet-think-tilt .9s ease-in-out infinite; }
+.pet-stage[data-state="work"][data-work="stargaze"] .pet-figure { transform-box: view-box; transform-origin: 70px 80px; transform: rotate(-13deg); }
+.pet-stage[data-state="work"][data-work="stargaze"] .pet-arm-r { transform: rotate(-52deg); }
+
+/* ---------- 台词气泡 ---------- */
+.pet-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%) translateY(6px) scale(.82);
+  min-width: 96px;
+  max-width: 210px;
+  padding: 7px 11px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+  text-align: center;
+  white-space: normal;
+  word-break: break-all;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s var(--ease), transform .25s var(--ease-out), visibility .25s;
+  pointer-events: none;
+}
+.pet-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%; bottom: -5px;
+  width: 10px; height: 10px;
+  background: var(--bg-elev);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+}
+.pet-stage[data-bubble="1"] .pet-bubble { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0) scale(1); }
+.pet-bubble b { color: var(--accent); font-weight: 600; margin-right: 4px; }
+.pet-bubble .zz { color: var(--text-mute); letter-spacing: 1px; }
+
+/* ---------- 工作道具（CSS 绘制，零素材） ---------- */
+.pet-prop { position: absolute; display: none; pointer-events: none; }
+
+/* 小笔记本 + 铅笔（写文章） */
+.p-notepad { right: -30px; bottom: 26px; width: 30px; height: 34px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; box-shadow: var(--shadow-sm); }
+.p-notepad::before { content: ""; position: absolute; left: 5px; right: 5px; top: 6px; height: 2px; background: var(--border); box-shadow: 0 6px 0 var(--border), 0 12px 0 var(--border), 0 18px 0 var(--border); }
+.p-notepad::after { content: ""; position: absolute; right: -9px; bottom: 2px; width: 4px; height: 16px; background: var(--accent); border-radius: 1px; transform: rotate(24deg); transform-origin: bottom center; animation: pet-pencil .5s ease-in-out infinite; }
+.pet-stage[data-work="write"] .p-notepad { display: block; }
+@keyframes pet-pencil { 0%,100% { transform: rotate(24deg); } 50% { transform: rotate(6deg); } }
+
+/* 小虫子（捉 Bug）：红色小点 + 触角，绕星星爬 */
+.p-bug { left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: #d24a4a; box-shadow: 0 0 0 2px rgba(210, 74, 74, .25); }
+.p-bug::before, .p-bug::after { content: ""; position: absolute; top: -5px; width: 1.6px; height: 6px; background: #d24a4a; border-radius: 1px; }
+.p-bug::before { left: 2px; transform: rotate(-18deg); }
+.p-bug::after { right: 2px; transform: rotate(18deg); }
+.pet-stage[data-work="debug"] .p-bug { display: block; animation: pet-bug-crawl 2.6s linear infinite; }
+@keyframes pet-bug-crawl {
+  0% { transform: translate(-46px, -18px); }
+  25% { transform: translate(38px, -30px); }
+  50% { transform: translate(46px, 22px); }
+  75% { transform: translate(-38px, 30px); }
+  100% { transform: translate(-46px, -18px); }
+}
+
+/* 书（看书） */
+.p-book { right: -34px; bottom: 30px; width: 34px; height: 24px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 3px; box-shadow: var(--shadow-sm); }
+.p-book::before { content: ""; position: absolute; left: 50%; top: 2px; bottom: 2px; width: 1px; background: var(--border); }
+.p-book::after { content: ""; position: absolute; left: 4px; right: 4px; top: 4px; bottom: 4px; background: var(--gold-soft); transform-origin: left center; animation: pet-page .9s ease-in-out infinite alternate; }
+.pet-stage[data-work="read"] .p-book { display: block; }
+@keyframes pet-page { from { transform: scaleX(.55); } to { transform: scaleX(1); } }
+
+/* 音符（听歌） */
+.p-note { color: var(--accent); font-size: 14px; font-style: normal; opacity: 0; }
+.p-note i { position: absolute; font-style: normal; }
+.pet-stage[data-work="music"] .p-note { display: block; }
+.pet-stage[data-work="music"] .p-note i { animation: pet-note-up 1.6s ease-out infinite; }
+.p-note i:nth-child(1) { left: -34px; bottom: 44px; animation-delay: 0s !important; }
+.p-note i:nth-child(2) { left: 96px; bottom: 40px; animation-delay: .55s !important; }
+.p-note i:nth-child(3) { left: -26px; bottom: 58px; animation-delay: 1.1s !important; }
+@keyframes pet-note-up {
+  0% { transform: translateY(6px) rotate(-8deg); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateY(-26px) rotate(14deg); opacity: 0; }
+}
+
+/* 花盆 + 水珠（浇花） */
+.p-pot { right: -36px; bottom: 8px; width: 22px; height: 18px; background: linear-gradient(var(--accent), var(--accent-hover)); border-radius: 0 0 8px 8px; clip-path: polygon(12% 0, 88% 0, 76% 100%, 24% 100%); }
+.p-pot::before { content: ""; position: absolute; left: 50%; top: -9px; width: 2px; height: 10px; background: var(--gold); transform: translateX(-50%); border-radius: 1px; }
+.p-pot::after { content: ""; position: absolute; left: 50%; top: -13px; width: 9px; height: 9px; background: var(--gold); border-radius: 50% 50% 50% 0; transform: translateX(-50%) rotate(-45deg); box-shadow: 6px -5px 0 -3px var(--gold), -6px -4px 0 -4px var(--gold); }
+.pet-stage[data-work="water"] .p-pot { display: block; }
+.pet-stage[data-work="water"] .p-pot { animation: pot-tip 1.6s ease-in-out infinite; }
+@keyframes pot-tip { 0%,100% { transform: rotate(0deg); } 40% { transform: rotate(-16deg); } }
+.p-drop { position: absolute; right: -30px; bottom: 30px; width: 4px; height: 6px; background: #6db3d4; border-radius: 50% 50% 60% 60%; opacity: 0; }
+.pet-stage[data-work="water"] .p-drop { display: block; animation: pet-drop 1.6s ease-in infinite; }
+@keyframes pet-drop { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 80% { transform: translateY(16px); opacity: .8; } 100% { transform: translateY(20px); opacity: 0; } }
+
+/* 咖啡杯 + 热气（喝咖啡） */
+.p-cup { right: -30px; bottom: 14px; width: 18px; height: 15px; background: var(--bg-elev); border: 1.5px solid var(--border); border-radius: 0 0 7px 7px; border-top: none; }
+.p-cup::before { content: ""; position: absolute; right: -7px; top: 2px; width: 7px; height: 8px; border: 1.5px solid var(--border); border-left: none; border-radius: 0 6px 6px 0; }
+.p-cup::after { content: ""; position: absolute; left: 2px; right: 2px; top: 1px; height: 3px; background: #8a5a2b; border-radius: 2px; }
+.pet-stage[data-work="coffee"] .p-cup { display: block; }
+.p-steam { position: absolute; right: -22px; bottom: 30px; width: 3px; height: 8px; border-left: 1.4px solid var(--text-mute); border-radius: 50%; opacity: 0; }
+.pet-stage[data-work="coffee"] .p-steam { display: block; animation: pet-steam 1.8s ease-out infinite; }
+.pet-stage[data-work="coffee"] .p-steam:nth-of-type(2) { right: -15px; animation-delay: .9s; }
+@keyframes pet-steam { 0% { transform: translateY(2px) scaleY(.6); opacity: 0; } 30% { opacity: .8; } 100% { transform: translateY(-12px) scaleY(1.2); opacity: 0; } }
+
+/* 数星星：头顶飘小星 */
+.p-stars i { position: absolute; color: var(--gold); font-size: 10px; font-style: normal; opacity: 0; }
+.pet-stage[data-work="stargaze"] .p-stars { display: block; }
+.pet-stage[data-work="stargaze"] .p-stars i { animation: pet-note-up 2.2s ease-out infinite; }
+.p-stars i:nth-child(1) { left: 18px; top: 16px; animation-delay: 0s !important; }
+.p-stars i:nth-child(2) { left: 92px; top: 8px; animation-delay: .8s !important; }
+.p-stars i:nth-child(3) { left: 56px; top: -2px; animation-delay: 1.5s !important; }
+
+/* 睡着的 Zzz */
+.p-zzz { position: absolute; left: 64px; top: 6px; display: none; pointer-events: none; }
+.p-zzz i { position: absolute; font-style: normal; font-weight: 700; color: var(--text-mute); opacity: 0; }
+.pet-stage[data-state="sleep"] .p-zzz { display: block; }
+.pet-stage[data-state="sleep"] .p-zzz i { animation: pet-zzz 2.4s ease-out infinite; }
+.p-zzz i:nth-child(1) { font-size: 12px; animation-delay: 0s !important; }
+.p-zzz i:nth-child(2) { font-size: 15px; left: 10px; top: -8px; animation-delay: .8s !important; }
+.p-zzz i:nth-child(3) { font-size: 18px; left: 22px; top: -18px; animation-delay: 1.6s !important; }
+@keyframes pet-zzz { 0% { transform: translateY(4px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-16px) translateX(8px); opacity: 0; } }
+
+/* ---------- 互动粒子（爱心 / 星星） ---------- */
+.pet-fx { position: absolute; left: 50%; top: 34%; font-size: 14px; pointer-events: none; animation: pet-fx-up 1s ease-out forwards; }
+.pet-fx.fx-heart { color: #e0636f; }
+.pet-fx.fx-star { color: var(--gold); }
+@keyframes pet-fx-up {
+  0% { transform: translate(-50%, 0) scale(.4); opacity: 0; }
+  25% { transform: translate(calc(-50% + var(--dx, 0px)), -12px) scale(1.1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx, 0px)), -44px) scale(.8); opacity: 0; }
+}
+
+/* ---------- 星星糖（喂食用） ---------- */
+.pet-candy { position: absolute; left: 50%; top: -6px; color: var(--gold); font-size: 17px; pointer-events: none; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold) 55%, transparent)); animation: pet-candy-fall .62s cubic-bezier(.5, .1, .8, .6) forwards; }
+@keyframes pet-candy-fall {
+  0% { transform: translate(-50%, 0) rotate(0deg); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(-50%, 52px) rotate(220deg); opacity: 1; }
+}
+
+/* ---------- 状态面板 ---------- */
+.pet-panel {
+  position: absolute;
+  right: -8px;
+  bottom: calc(100% + 8px);
+  width: 224px;
+  padding: 12px 13px 11px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px) scale(.94);
+  transform-origin: bottom right;
+  transition: opacity .22s var(--ease), transform .22s var(--ease-out), visibility .22s;
+  cursor: default;
+}
+.pet-stage[data-panel="1"] .pet-panel { opacity: 1; visibility: visible; transform: none; }
+
+.pet-panel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.pet-panel-name { font-family: var(--font-serif); font-weight: 700; font-size: 15px; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pet-panel-name input { width: 100%; font: inherit; color: inherit; background: var(--bg-soft); border: 1px solid var(--accent-ring); border-radius: 6px; padding: 2px 6px; outline: none; }
+.pet-lv { flex: none; font-size: 11px; font-weight: 700; color: var(--gold); background: var(--gold-soft); border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent); border-radius: 999px; padding: 2px 8px; }
+.pet-panel-close { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: none; background: none; color: var(--text-mute); cursor: pointer; border-radius: 6px; font-size: 13px; line-height: 1; }
+.pet-panel-close:hover { color: var(--text); background: var(--bg-soft); }
+
+.pet-exp { height: 6px; background: var(--bg-soft); border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+.pet-exp i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), color-mix(in srgb, var(--gold) 60%, #ffe9a8)); border-radius: 999px; transition: width .5s var(--ease-out); }
+.pet-exp-tip { font-size: 10.5px; color: var(--text-mute); margin-bottom: 9px; }
+.pet-exp-tip b { color: var(--accent); font-weight: 600; }
+
+.pet-acts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 9px; }
+.pet-act { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px 6px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text-soft); font-size: 10.5px; cursor: pointer; transition: all var(--dur-fast) var(--ease); }
+.pet-act:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.pet-act:active { transform: translateY(0) scale(.96); }
+.pet-act .ic { font-size: 15px; line-height: 1; }
+.pet-act:disabled { opacity: .45; cursor: default; pointer-events: none; }
+
+.pet-panel-foot { display: flex; align-items: center; justify-content: space-between; font-size: 10.5px; color: var(--text-mute); }
+.pet-panel-foot button { border: none; background: none; color: var(--text-mute); font-size: 10.5px; cursor: pointer; padding: 2px 4px; border-radius: 5px; }
+.pet-panel-foot button:hover { color: var(--accent); background: var(--accent-soft); }
+
+/* 面板小箭头 */
+.pet-panel::after { content: ""; position: absolute; right: 18px; bottom: -6px; width: 11px; height: 11px; background: var(--bg-elev); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); transform: rotate(45deg); }
+
+/* 靠近视口顶部时：面板/气泡向下展开，避免被裁切 */
+.pet-stage[data-panel-flip="1"] .pet-panel { bottom: auto; top: calc(100% + 8px); transform-origin: top right; }
+.pet-stage[data-panel-flip="1"] .pet-panel::after { bottom: auto; top: -6px; border: none; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+.pet-stage[data-bubble-flip="1"] .pet-bubble { bottom: auto; top: calc(100% + 6px); transform: translateX(-50%) translateY(-6px) scale(.82); }
+.pet-stage[data-bubble-flip="1"][data-bubble="1"] .pet-bubble { transform: translateX(-50%) translateY(0) scale(1); }
+.pet-stage[data-bubble-flip="1"] .pet-bubble::after { bottom: auto; top: -5px; border: none; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+
+/* 偷偷打盹：也冒 Zzz */
+.pet-stage[data-work="nap"] .p-zzz { display: block; }
+
+/* ---------- 徽章（点它开面板） ---------- */
+.pet-badge {
+  position: absolute;
+  left: 4px; bottom: 6px;
+  min-width: 20px; height: 20px;
+  padding: 0 6px;
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  color: var(--gold);
+  font-size: 10.5px; font-weight: 700;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.pet-badge:hover { border-color: var(--gold); transform: scale(1.08); }
+.pet-badge .lv { color: var(--text-mute); font-weight: 600; }
+
+/* ---------- 移动端 ---------- */
+@media (max-width: 640px) {
+  .pet-stage { width: 104px; height: 104px; }
+  .pet-panel { width: 208px; right: -4px; }
+  .pet-bubble { font-size: 11.5px; max-width: 180px; }
+}
+
+/* ---------- 打印与降级 ---------- */
+@media print {
+  .pet-stage { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pet-stage .pet-svg,
+  .pet-stage .pet-arm, .pet-stage .pet-leg, .pet-stage .pet-eyes-open,
+  .pet-stage .pet-face { animation: none !important; }
+  .pet-stage .pet-prop, .pet-stage .p-zzz, .pet-stage .pet-fx, .pet-stage .pet-candy { animation-duration: .01ms !important; }
+}

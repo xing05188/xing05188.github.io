@@ -4,7 +4,7 @@
    后台拉取新版并更新缓存，资源更新后下一次加载即生效）；
    页面 network-first，离线时回退到缓存；导航失败时展示缓存的 404 页。
    ============================================================ */
-var VERSION = 'xingji-v5';
+var VERSION = 'xingji-v6';
 var SHELL = [
   '/',
   '/archive/',
@@ -23,8 +23,10 @@ var SHELL = [
   '/manifest.webmanifest',
   '/search.json',
   '/assets/css/main.css',
+  '/assets/css/pet.css',
   '/assets/css/syntax.css',
   '/assets/js/main.js',
+  '/assets/js/pet.js',
   '/assets/js/posts-data.js',
   '/assets/js/pinyin-data.js',
   '/assets/img/icon-192.png',
