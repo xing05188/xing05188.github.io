@@ -2542,9 +2542,7 @@ html[data-theme="light"] body::after {
     transparent 63%, rgba(72, 62, 46, .13) 100%);
 }
 
-/* ---------- 24. Hero 微视差：子元素按深度浮动 ---------- */
-.hero-inner .micro { will-change: transform; }
-.hero-inner .micro.micro-leaving { transition: transform .55s var(--ease); }
+/* ---------- 24. （Hero 微视差已移除：首屏内容保持静止，不再随鼠标浮动） ---------- */
 
 /* ============================================================
    第九轮：布局丰富化 · 首屏居中重构

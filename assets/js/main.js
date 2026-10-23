@@ -1840,41 +1840,6 @@
   })();
 
   /* ==========================================================
-     32.6 Hero 微视差：内容随鼠标轻微浮动，子元素各按不同深度
-     形成「悬浮在星空前」的层次（与滚动退场作用于不同元素，互不冲突）
-     ========================================================== */
-  (function initHeroMicro() {
-    var inner = $('.hero-inner');
-    var hero = $('.hero');
-    if (!inner || !hero || reduceMotion) return;
-    if (!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches)) return;
-    var DEPTHS = [10, 18, 13, 8, 6];   // kicker / h1 / lead / meta / actions
-    var els = [];
-    Array.prototype.slice.call(inner.children).forEach(function (el, i) {
-      el.classList.add('micro');
-      els.push({ el: el, d: DEPTHS[Math.min(i, DEPTHS.length - 1)] });
-    });
-    if (!els.length) return;
-    hero.addEventListener('pointermove', function (e) {
-      if (e.pointerType === 'touch') return;
-      var r = inner.getBoundingClientRect();
-      var nx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
-      var ny = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
-      for (var i = 0; i < els.length; i++) {
-        var o = els[i];
-        o.el.classList.remove('micro-leaving');
-        o.el.style.transform = 'translate3d(' + (nx * o.d).toFixed(1) + 'px,' + (ny * o.d * .7).toFixed(1) + 'px,0)';
-      }
-    }, { passive: true });
-    hero.addEventListener('pointerleave', function () {
-      for (var i = 0; i < els.length; i++) {
-        els[i].el.classList.add('micro-leaving');
-        els[i].el.style.transform = '';
-      }
-    });
-  })();
-
-  /* ==========================================================
      32. 彩蛋提示（每设备只提示一次）
      ========================================================== */
   (function initEggHint() {
