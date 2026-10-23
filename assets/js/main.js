@@ -5,7 +5,8 @@
         阅读字号 / 快捷键帮助 / 归档标签筛选 / Service Worker 更新提示 /
         主页特效：标题逐字渐入 / 数字滚动 / 磁性按钮 / 卡片聚光灯+3D 倾斜 /
         星尘拖尾 / 首屏视差 / 星标伴生光标 / 流星雨彩蛋 /
-        标题字符波浪 / 点赞粒子 / 彩蛋提示
+        标题字符波浪 / 点赞粒子 / 彩蛋提示 /
+        华丽升级：星空鼠标透镜+冲击波 / Hero 电影感退场 / 环境辉光 / 星星雨
    ============================================================ */
 (function () {
   'use strict';
@@ -705,8 +706,13 @@
     var cv = $('#starfield');
     if (!cv || !cv.getContext) return;
     var ctx = cv.getContext('2d');
-    var stars = [], meteors = [], raf = null;
+    var stars = [], meteors = [], ripples = [], raf = null;
     var W = 0, H = 0, lastMeteor = 0;
+    // 鼠标交互（仅桌面精细指针 + 允许动效时启用）
+    var interactive = !reduceMotion &&
+      !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+    var ptr = { x: -9999, y: -9999, on: false };
+    var LENS_R = 130, LENS_R2 = LENS_R * LENS_R;
 
     function colors() {
       var cs = getComputedStyle(doc.documentElement);
@@ -744,7 +750,6 @@
     }
 
     function spawnMeteor(now) {
-      if (reduceMotion) return;
       if (now - lastMeteor < 2600 + Math.random() * 5200) return;
       lastMeteor = now;
       var fromLeft = Math.random() < .7;
@@ -761,17 +766,30 @@
       var col = colors();
       ctx.clearRect(0, 0, W, H);
 
+      // 星星：闪烁 + 鼠标「透镜」效果（靠近的星被吸引、点亮、放大）
       for (var i = 0; i < stars.length; i++) {
         var s = stars[i];
         var tw = reduceMotion ? 1 : (.62 + .38 * Math.sin(now / 1000 * s.sp + s.ph));
-        ctx.globalAlpha = s.a * tw * col.a;
+        var ox = 0, oy = 0, boost = 1, extra = 0;
+        if (ptr.on) {
+          var dx = ptr.x - s.x, dy = ptr.y - s.y;
+          var d2 = dx * dx + dy * dy;
+          if (d2 < LENS_R2) {
+            var f = 1 - Math.sqrt(d2) / LENS_R;
+            ox = dx * f * .22;
+            oy = dy * f * .22;
+            boost = 1 + f * .9;
+            extra = f * .55;
+          }
+        }
+        ctx.globalAlpha = Math.min(1, s.a * tw * col.a + extra);
         ctx.fillStyle = col.c[s.c];
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.arc(s.x + ox, s.y + oy, s.r * boost, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      spawnMeteor(now);
+      if (!reduceMotion) spawnMeteor(now);
       for (var j = meteors.length - 1; j >= 0; j--) {
         var m = meteors[j];
         m.x += m.vx; m.y += m.vy;
@@ -789,8 +807,41 @@
         ctx.stroke();
       }
 
+      // 点击冲击波：金色圆环从点击点扩散
+      for (var k = ripples.length - 1; k >= 0; k--) {
+        var rp = ripples[k];
+        rp.r += 6.5;
+        rp.a -= .022;
+        if (rp.a <= 0 || rp.r > Math.max(W, H)) { ripples.splice(k, 1); continue; }
+        ctx.globalAlpha = Math.max(0, rp.a) * .8;
+        ctx.strokeStyle = col.c[1];
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       ctx.globalAlpha = 1;
       if (!reduceMotion) raf = requestAnimationFrame(draw);
+    }
+
+    if (interactive) {
+      var hero = $('.hero');
+      if (hero) {
+        hero.addEventListener('pointermove', function (e) {
+          if (e.pointerType === 'touch') return;
+          var rect = cv.getBoundingClientRect();
+          ptr.x = e.clientX - rect.left;
+          ptr.y = e.clientY - rect.top;
+          ptr.on = true;
+        }, { passive: true });
+        hero.addEventListener('pointerleave', function () { ptr.on = false; });
+        hero.addEventListener('pointerdown', function (e) {
+          if (e.pointerType === 'touch') return;
+          var rect = cv.getBoundingClientRect();
+          ripples.push({ x: e.clientX - rect.left, y: e.clientY - rect.top, r: 0, a: 1 });
+        }, { passive: true });
+      }
     }
 
     var resizeTimer = null;
@@ -1224,8 +1275,10 @@
     function walk(node) {
       var kids = Array.prototype.slice.call(node.childNodes);
       kids.forEach(function (n) {
+        // em 行不拆字：背景渐变裁切文字（background-clip:text）对
+        // inline-block 后代无效，拆了会让整行透明不可见
         if (n.nodeType === 3 && n.nodeValue.trim()) splitTextNode(n, node);
-        else if (n.nodeType === 1) walk(n);
+        else if (n.nodeType === 1 && n.tagName !== 'EM') walk(n);
       });
     }
     walk(h1);
@@ -1409,12 +1462,25 @@
       rzTimer = setTimeout(measure, 150);
     });
     var ticking = false;
+    function reset() {
+      inner.style.transform = '';
+      inner.style.opacity = '';
+      inner.style.filter = '';
+      if (field) field.style.transform = '';
+    }
     function update() {
       ticking = false;
       var y = window.scrollY || window.pageYOffset;
-      if (y > h) { inner.style.transform = ''; if (field) field.style.transform = ''; return; }
+      if (y < 2 || y > h) { reset(); return; }
+      // 电影感退场：上移 + 缩小 + 3D 后仰 + 渐隐 + 微模糊
+      var p = Math.min(1, y / h);
       inner.classList.add('para');
-      inner.style.transform = 'translateY(' + (y * .14).toFixed(1) + 'px)';
+      inner.style.transform =
+        'translateY(' + (y * .14).toFixed(1) + 'px) ' +
+        'scale(' + (1 - p * .07).toFixed(3) + ') ' +
+        'rotateX(' + (p * 7).toFixed(2) + 'deg)';
+      inner.style.opacity = (1 - p * .9).toFixed(3);
+      inner.style.filter = 'blur(' + (p * 2.6).toFixed(2) + 'px)';
       if (field) field.style.transform = 'translateY(' + (y * .06).toFixed(1) + 'px)';
     }
     window.addEventListener('scroll', function () {
@@ -1424,7 +1490,7 @@
   })();
 
   /* ==========================================================
-     29. 星标伴生光标（仅桌面精细指针；延迟跟随 + 拖尾微粒 + 点击弹跳）
+     29. 星标伴生光标 + 环境辉光（仅桌面精细指针；延迟跟随 + 拖尾微粒 + 点击弹跳）
      ========================================================== */
   (function initStarCursor() {
     if (reduceMotion) return;
@@ -1439,8 +1505,14 @@
     star.appendChild(glyph);
     doc.body.appendChild(star);
 
+    // 环境辉光：大而淡的柔光，营造「屏幕上有一盏灯」的氛围
+    var glow = doc.createElement('div');
+    glow.className = 'cursor-glow';
+    glow.setAttribute('aria-hidden', 'true');
+    doc.body.appendChild(glow);
+
     var tx = window.innerWidth / 2, ty = window.innerHeight / 2;
-    var x = tx, y = ty;
+    var x = tx, y = ty, gx = tx, gy = ty;
     var lastTrail = 0;
     var trailCount = 0;
 
@@ -1448,6 +1520,7 @@
       if (e.pointerType === 'touch') return;
       tx = e.clientX; ty = e.clientY;
       star.classList.remove('dim');
+      glow.classList.add('on');
       var now = e.timeStamp || Date.now();
       if (now - lastTrail > 90) {
         lastTrail = now;
@@ -1455,8 +1528,14 @@
       }
     }, { passive: true });
 
-    doc.addEventListener('mouseleave', function () { star.classList.add('dim'); });
-    doc.addEventListener('mouseenter', function () { star.classList.remove('dim'); });
+    doc.addEventListener('mouseleave', function () {
+      star.classList.add('dim');
+      glow.classList.remove('on');
+    });
+    doc.addEventListener('mouseenter', function () {
+      star.classList.remove('dim');
+      glow.classList.add('on');
+    });
 
     window.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'touch') return;
@@ -1485,6 +1564,10 @@
       var rot = Math.max(-40, Math.min(40, (tx - x) * .55));
       star.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)';
       glyph.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      // 辉光更迟缓，形成层次
+      gx += (tx - gx) * .08;
+      gy += (ty - gy) * .08;
+      glow.style.transform = 'translate3d(' + gx.toFixed(1) + 'px,' + gy.toFixed(1) + 'px,0)';
       requestAnimationFrame(loop);
     })();
   })();
@@ -1525,7 +1608,12 @@
       for (var i = 0; i < count; i++) {
         setTimeout(spawnMeteor, i * 130 + Math.random() * 90);
       }
-      setTimeout(function () { running = false; }, count * 130 + 1800);
+      // 星星雨：流星划过之后，星星从顶端纷纷飘落
+      var rain = isKonami ? 26 : 16;
+      for (var k = 0; k < rain; k++) {
+        setTimeout(spawnFallingStar, 500 + k * 110 + Math.random() * 260);
+      }
+      setTimeout(function () { running = false; }, Math.max(count * 130 + 1800, 500 + rain * 110 + 4400));
     }
 
     function spawnMeteor() {
@@ -1537,6 +1625,21 @@
       m.style.setProperty('--dur', (.85 + Math.random() * .7).toFixed(2) + 's');
       doc.body.appendChild(m);
       m.addEventListener('animationend', function () { m.remove(); });
+    }
+
+    function spawnFallingStar() {
+      var s = doc.createElement('span');
+      s.className = 'fall-star';
+      s.setAttribute('aria-hidden', 'true');
+      s.textContent = Math.random() < .35 ? '✦' : '★';
+      s.style.left = (Math.random() * 100).toFixed(1) + 'vw';
+      s.style.color = Math.random() < .5 ? 'var(--gold)' : 'var(--accent)';
+      s.style.setProperty('--dur', (2 + Math.random() * 1.7).toFixed(2) + 's');
+      s.style.setProperty('--drift', Math.round(-70 + Math.random() * 140) + 'px');
+      s.style.setProperty('--rot', Math.round(-180 + Math.random() * 360) + 'deg');
+      s.style.setProperty('--size', (9 + Math.random() * 9).toFixed(0) + 'px');
+      doc.body.appendChild(s);
+      s.addEventListener('animationend', function () { s.remove(); });
     }
   })();
 
