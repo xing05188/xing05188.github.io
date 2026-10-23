@@ -1100,7 +1100,7 @@
      16. 入场动效（IntersectionObserver）
      ========================================================== */
   (function initReveal() {
-    var items = $$('.post-card, .widget, .archive-row, .year-group, .lab-card, .friend-card, .book-card, .tl-item, .related-item, .archive-chart, .bar-rows, .quote-band, .series-node');
+    var items = $$('.post-card, .widget, .archive-row, .year-group, .lab-card, .friend-card, .book-card, .tl-item, .related-item, .archive-chart, .bar-rows, .quote-band, .series-node, .quick-tags');
     if (!items.length) return;
 
     if (!('IntersectionObserver' in window) || reduceMotion) {
@@ -1378,7 +1378,7 @@
     }
 
     // Hero：进入即播
-    var heroEls = $$('.hero-meta .stat b');
+    var heroEls = $$('.hero-meta .stat-card b, .hero-meta .stat b');
     if (heroEls.length) setTimeout(function () { heroEls.forEach(animate); }, 420);
 
     // 侧边栏「小站统计」：滚入视口时再滚动（只播一次）

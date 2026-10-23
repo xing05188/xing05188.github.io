@@ -15,24 +15,25 @@ layout: default
 <section class="hero">
   <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
   <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-orb orb-a" aria-hidden="true"></div>
+  <div class="hero-orb orb-b" aria-hidden="true"></div>
 
   <div class="wrap">
     <div class="hero-inner">
       <p class="hero-kicker"><span class="kicker-star">✦</span> 一个人的数字花园</p>
       <h1>一半写给代码，<br><em>一半写给自己。</em></h1>
 
+      <div class="hero-rule" aria-hidden="true"><span>✦</span></div>
+
       <p class="lead type-line" id="type-line"
          data-phrases='["同济大学计算机在读，写代码也写生活。","技术笔记、读书摘抄和生活碎片，写得慢，但会一直写下去。","偶尔拍照，常常散步。","这里没有 KPI，只有真心想清楚的事。"]'
          aria-live="polite"></p>
 
       <div class="hero-meta">
-        <span class="stat"><b>{{ site.posts.size }}</b> 篇文章</span>
-        <span class="dot">·</span>
-        <span class="stat"><b>{{ site.tags.size }}</b> 个标签</span>
-        <span class="dot">·</span>
-        <span class="stat"><b>{{ total_words }}</b> 字</span>
-        <span class="dot">·</span>
-        <span class="stat">已运行 <b>{{ run_days }}</b> 天</span>
+        <div class="stat-card"><b>{{ site.posts.size }}</b><span>篇文章</span></div>
+        <div class="stat-card"><b>{{ site.tags.size }}</b><span>个标签</span></div>
+        <div class="stat-card"><b>{{ total_words }}</b><span>字笔记</span></div>
+        <div class="stat-card"><b>{{ run_days }}</b><span>天运行</span></div>
       </div>
 
       <div class="hero-actions">
@@ -46,6 +47,8 @@ layout: default
         </button>
         <a class="btn btn-ghost" href="{{ '/about/' | relative_url }}">关于我</a>
       </div>
+
+      <p class="hero-hint"><span class="hh-star">✦</span> 小提示：在键盘上输入 <kbd>wish</kbd> 召唤流星雨，双击页面放烟花</p>
     </div>
   </div>
 
@@ -65,6 +68,29 @@ layout: default
     </blockquote>
   </div>
 </section>
+
+<!-- ===================== 按标签逛 ===================== -->
+{% assign tag_names = '' | split: '' %}
+{% for tag in site.tags %}{% assign tag_names = tag_names | push: tag[0] %}{% endfor %}
+{% assign tag_names = tag_names | sort %}
+{% if tag_names.size > 0 %}
+<section class="quick-tags reveal">
+  <div class="wrap">
+    <div class="qt-head">
+      <span class="qt-label"><i>✦</i> 按标签逛</span>
+      <a class="qt-more" href="{{ '/tags/' | relative_url }}">全部标签 →</a>
+    </div>
+    <div class="qt-list">
+      {% for tag_name in tag_names limit: 12 %}
+      <a class="qt-chip" href="{{ '/tags/?tag=' | append: tag_name | relative_url }}">
+        <span class="qt-name">{{ tag_name }}</span>
+        <span class="qt-n">{{ site.tags[tag_name].size }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
 
 <!-- ===================== 文章列表 ===================== -->
 <div class="wrap" id="latest">

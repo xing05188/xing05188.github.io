@@ -370,10 +370,14 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
    Hero 区
    ============================================================ */
 .hero {
-  padding: clamp(64px, 9vw, 104px) 0 clamp(46px, 6vw, 64px);
+  padding: clamp(56px, 8vw, 88px) 0 clamp(44px, 6vw, 60px);
   border-bottom: 1px solid var(--border-soft);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: clamp(540px, 84vh, 790px);
 }
 .hero-glow {
   position: absolute;
@@ -392,7 +396,7 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
   z-index: 0;
   pointer-events: none;
 }
-.hero-inner { position: relative; z-index: 1; max-width: 680px; }
+.hero-inner { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; text-align: center; }
 
 .hero-kicker {
   display: inline-flex;
@@ -438,10 +442,29 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
   font-size: clamp(1.05rem, 1.5vw, 1.2rem);
   color: var(--text-soft);
   line-height: 1.9;
-  margin-bottom: 30px;
+  margin: 0 auto 30px;
   max-width: 58ch;
   min-height: 2.2em;
 }
+
+/* 标题下的星形分隔线 */
+.hero-rule {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(240px, 62%);
+  margin: 0 auto 22px;
+  color: var(--gold);
+  font-size: .78rem;
+}
+.hero-rule::before, .hero-rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, currentColor, transparent);
+  opacity: .55;
+}
+.hero-rule span { display: inline-block; animation: star-spin 6s linear infinite; }
 
 /* 打字机光标 */
 .type-line .caret {
@@ -456,13 +479,40 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
 @keyframes caret-blink { 50% { opacity: 0; } }
 
 .hero-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 560px;
+  margin: 0 auto 28px;
+}
+.stat-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: .9rem;
+  gap: 2px;
+  padding: 13px 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-elev) 62%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-sm);
+  transition: transform .25s var(--ease), border-color .25s var(--ease);
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.stat-card b {
+  font-size: 1.42rem;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.stat-card span {
+  font-size: .78rem;
   color: var(--text-mute);
-  margin-bottom: 26px;
+  letter-spacing: .05em;
 }
 .hero-meta .stat b {
   color: var(--text);
@@ -471,7 +521,60 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
 }
 .hero-meta .dot { opacity: .5; }
 
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* 彩蛋提示行 */
+.hero-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 24px auto 0;
+  font-size: .8rem;
+  color: var(--text-mute);
+}
+.hero-hint .hh-star { display: inline-block; color: var(--gold); animation: star-spin 6s linear infinite; }
+.hero-hint kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .74rem;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
+/* 背景漂浮光斑：增加首屏层次，衬托星空 */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(70px);
+}
+.hero-orb.orb-a {
+  width: 380px; height: 380px;
+  left: -80px; bottom: -120px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--gold) 20%, transparent), transparent 68%);
+  opacity: .7;
+  animation: orb-drift 14s var(--ease) infinite alternate;
+}
+.hero-orb.orb-b {
+  width: 320px; height: 320px;
+  right: -60px; top: 16%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent), transparent 68%);
+  opacity: .6;
+  animation: orb-drift 18s var(--ease) infinite alternate-reverse;
+}
+@keyframes orb-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(40px, -26px) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-orb { animation: none; }
+}
 
 /* 向下滚动提示 */
 .hero-scroll {
@@ -1807,12 +1910,15 @@ html[data-js] .reveal.in {
 /* ---------- 今日一句 ---------- */
 .quote-band { padding: 34px 0 8px; }
 .quote-band blockquote {
-  position: relative; margin: 0; padding: 26px 30px 22px 58px;
+  position: relative; margin: 0 auto; padding: 36px 40px 26px;
+  max-width: 720px;
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--bg-elev); box-shadow: var(--shadow-sm);
+  text-align: center;
 }
 .quote-band .q-mark {
-  position: absolute; left: 18px; top: 8px;
+  position: absolute; left: 50%; top: 4px;
+  transform: translateX(-50%);
   font-family: var(--font-serif); font-size: 3.2rem; line-height: 1;
   color: var(--gold); opacity: .8;
 }
@@ -1823,6 +1929,7 @@ html[data-js] .reveal.in {
 .quote-band cite {
   display: block; margin-top: 10px; font-style: normal;
   font-size: .78rem; color: var(--text-mute); letter-spacing: .04em;
+  text-align: center;
 }
 
 /* ---------- 统计页 · 总览数字 ---------- */
@@ -2438,3 +2545,74 @@ html[data-theme="light"] body::after {
 /* ---------- 24. Hero 微视差：子元素按深度浮动 ---------- */
 .hero-inner .micro { will-change: transform; }
 .hero-inner .micro.micro-leaving { transition: transform .55s var(--ease); }
+
+/* ============================================================
+   第九轮：布局丰富化 · 首屏居中重构
+   ============================================================ */
+
+/* ---------- 26. 首页 · 按标签逛 ---------- */
+.quick-tags { padding: 6px 0 28px; }
+.qt-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.qt-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--text-mute);
+}
+.qt-label i { font-style: normal; color: var(--gold); }
+.qt-more { font-size: .82rem; color: var(--accent); text-decoration: none; white-space: nowrap; }
+.qt-more:hover { text-decoration: underline; }
+.qt-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.qt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  text-decoration: none;
+  font-size: .88rem;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  transition: transform .22s var(--ease), border-color .22s var(--ease), box-shadow .22s var(--ease);
+}
+.qt-chip:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  box-shadow: var(--shadow-md);
+}
+.qt-chip .qt-n {
+  font-size: .72rem;
+  color: var(--text-mute);
+  background: var(--bg-soft);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 27. 首屏移动端适配 ---------- */
+@media (max-width: 640px) {
+  .hero { min-height: 0; }
+  .hero-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stat-card { padding: 11px 6px 9px; }
+  .stat-card b { font-size: 1.25rem; }
+  .hero-hint { font-size: .74rem; }
+  .hero-hint kbd { font-size: .68rem; }
+  .quote-band blockquote { padding: 32px 22px 22px; }
+  .qt-head { justify-content: center; }
+}
