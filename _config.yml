@@ -36,6 +36,7 @@ nav:
   - { name: 时间线, url: "/timeline/" }
   - { name: 统计, url: "/stats/" }
   - { name: 留言, url: "/guestbook/" }
+  - { name: 工作台, url: "/workbench/" }
   - { name: 关于, url: "/about/" }
 
 # ---------- 文章链接格式 ----------

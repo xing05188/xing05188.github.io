@@ -304,6 +304,37 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
   font-weight: 600;
 }
 
+/* 工作台入口：描边小药丸 + 锁图标，与内容页链接区分 */
+.nav-links a.nav-wb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+  padding: 5px 12px 5px 9px;
+  border: 1px solid var(--border-2);
+  color: var(--gold);
+  font-size: .86rem;
+}
+.nav-links a.nav-wb svg { width: 13px; height: 13px; flex: none; }
+.nav-links a.nav-wb:hover {
+  border-color: var(--gold);
+  background: rgba(185, 138, 29, .1);
+  color: var(--gold);
+}
+.nav-links a.nav-wb::after {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 0 rgba(185, 138, 29, .5);
+  animation: wb-pulse 2.6s var(--ease) infinite;
+}
+@keyframes wb-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(185, 138, 29, .45); }
+  70% { box-shadow: 0 0 0 5px rgba(185, 138, 29, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(185, 138, 29, 0); }
+}
+
 /* 导航右侧工具 */
 .nav-tools { display: flex; align-items: center; gap: 6px; }
 
@@ -1978,3 +2009,75 @@ kbd {
   .bar-row { grid-template-columns: 72px 1fr 30px; gap: 8px; }
   .series-track { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   主页交互特效（第四轮）
+   标题逐字渐入 / 数字滚动 / 磁性按钮 / 卡片聚光灯+3D 微倾斜 /
+   星尘拖尾 / 首屏视差
+   ============================================================ */
+
+/* ---------- 1. 标题逐字渐入 ---------- */
+/* JS 加载前先整体藏起首屏标题，拆分后逐字带模糊上浮入场（无 JS 时不受影响） */
+html[data-js="pre"] .hero h1 { opacity: 0; }
+.hero h1 .ch {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(.45em) rotate(1.5deg);
+  filter: blur(5px);
+  will-change: transform, opacity, filter;
+}
+.hero h1.hero-in .ch {
+  animation: ch-in .66s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 34ms + 60ms);
+}
+@keyframes ch-in {
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* ---------- 2. 数字滚动（等宽数字防抖动） ---------- */
+.hero-meta .stat b { font-variant-numeric: tabular-nums; }
+
+/* ---------- 3. 磁性按钮 ---------- */
+.hero-actions .btn { will-change: transform; }
+.hero-actions .btn.mag-active { transition: transform .16s var(--ease); }
+
+/* ---------- 4. 文章卡片：聚光灯 + 3D 微倾斜 ---------- */
+.post-list, .pinned-strip { perspective: 1000px; }
+.post-card::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent) 12%, transparent), transparent 68%);
+  opacity: 0;
+  transition: opacity .32s var(--ease);
+  pointer-events: none;
+  z-index: 0;
+}
+.post-card.spot-on::after { opacity: 1; }
+/* 卡片内容浮在聚光灯之上 */
+.post-card > * { position: relative; z-index: 1; }
+/* 倾斜时阴影更聚焦 */
+.post-card.tilting {
+  transition: transform .12s linear, border-color .24s var(--ease), box-shadow .24s var(--ease);
+  box-shadow: var(--shadow-md);
+}
+
+/* ---------- 5. 星尘拖尾 ---------- */
+.star-dust {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 7px color-mix(in srgb, var(--gold) 70%, transparent);
+  animation: dust-float var(--dur, 1.1s) cubic-bezier(.2, .6, .3, 1) forwards;
+  will-change: transform, opacity;
+}
+@keyframes dust-float {
+  0%   { opacity: 0; transform: translate(0, 0) scale(.3) rotate(0deg); }
+  16%  { opacity: .95; }
+  100% { opacity: 0; transform: translate(var(--dx, 0), var(--dy, -40px)) scale(1.1) rotate(var(--rot, 40deg)); }
+}
+
+/* ---------- 6. 首屏视差 ---------- */
+.hero-inner.para { will-change: transform; }

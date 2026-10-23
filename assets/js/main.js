@@ -2,7 +2,9 @@
    星记 · 交互脚本（零依赖，ES5 兼容）
    模块：主题三态 / 公告 / 导航 / 进度条 / 目录 / 搜索 / 命令面板 /
         代码块 / 星空画布 / 打字机 / 随机文章 / 点赞 / 分享 / 灯箱 / 动效 /
-        阅读字号 / 快捷键帮助 / 归档标签筛选 / Service Worker 更新提示
+        阅读字号 / 快捷键帮助 / 归档标签筛选 / Service Worker 更新提示 /
+        主页特效：标题逐字渐入 / 数字滚动 / 磁性按钮 / 卡片聚光灯+3D 倾斜 /
+        星尘拖尾 / 首屏视差
    ============================================================ */
 (function () {
   'use strict';
@@ -1166,6 +1168,215 @@
         });
       });
     }).catch(function () {});
+  })();
+
+  /* ==========================================================
+     23. 首屏标题逐字渐入（保留 <br>/<em> 结构，逐字上浮 + 去模糊）
+     ========================================================== */
+  (function initHeroTitle() {
+    var h1 = $('.hero h1');
+    if (!h1) return;
+    if (reduceMotion) { h1.classList.add('hero-in'); return; }
+
+    var idx = 0;
+    function splitTextNode(node, parent) {
+      var text = node.nodeValue;
+      var frag = doc.createDocumentFragment();
+      for (var i = 0; i < text.length; i++) {
+        var ch = text.charAt(i);
+        if (ch === ' ') { frag.appendChild(doc.createTextNode(' ')); continue; }
+        var sp = doc.createElement('span');
+        sp.className = 'ch';
+        sp.style.setProperty('--i', idx++);
+        sp.textContent = ch;
+        frag.appendChild(sp);
+      }
+      parent.replaceChild(frag, node);
+    }
+    function walk(node) {
+      var kids = Array.prototype.slice.call(node.childNodes);
+      kids.forEach(function (n) {
+        if (n.nodeType === 3 && n.nodeValue.trim()) splitTextNode(n, node);
+        else if (n.nodeType === 1) walk(n);
+      });
+    }
+    walk(h1);
+    // 强制回流后挂类，确保动画从初始态开始
+    void h1.offsetWidth;
+    h1.classList.add('hero-in');
+  })();
+
+  /* ==========================================================
+     24. Hero 统计数字滚动（easeOutCubic，进入即播）
+     ========================================================== */
+  (function initCountUp() {
+    var els = $$('.hero-meta .stat b');
+    if (!els.length) return;
+    if (reduceMotion) return;
+    var DURATION = 1000;
+    function animate(el) {
+      var target = parseInt(el.textContent.replace(/[^\d]/g, ''), 10);
+      if (isNaN(target) || target <= 0) return;
+      var t0 = null;
+      function frame(ts) {
+        if (t0 === null) t0 = ts;
+        var p = Math.min(1, (ts - t0) / DURATION);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toLocaleString('en-US');
+        if (p < 1) requestAnimationFrame(frame);
+        else el.textContent = target.toLocaleString('en-US');
+      }
+      requestAnimationFrame(frame);
+    }
+    setTimeout(function () { els.forEach(animate); }, 420);
+  })();
+
+  /* ==========================================================
+     25. 磁性按钮（Hero CTA 轻微吸附光标，离开弹回）
+     ========================================================== */
+  (function initMagnetic() {
+    if (reduceMotion) return;
+    if (!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches)) return;
+    var MAX = 5;
+    $$('.hero-actions .btn').forEach(function (btn) {
+      btn.addEventListener('pointermove', function (e) {
+        var r = btn.getBoundingClientRect();
+        var dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+        var dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+        btn.classList.add('mag-active');
+        btn.style.transform = 'translate(' + (dx * MAX).toFixed(1) + 'px,' + (dy * MAX).toFixed(1) + 'px)';
+      });
+      btn.addEventListener('pointerleave', function () {
+        btn.classList.remove('mag-active');
+        btn.style.transform = '';
+      });
+    });
+  })();
+
+  /* ==========================================================
+     26. 文章卡片：聚光灯 + 3D 微倾斜（指针精细设备限定）
+     ========================================================== */
+  (function initCardFx() {
+    if (!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches)) return;
+    var MAX_TILT = 3;
+    var cards = $$('.post-list .post-card, .pinned-strip .post-card');
+    cards.forEach(function (card) {
+      var raf = null, mx = 50, my = 50, tx = 0, ty = 0;
+      function apply() {
+        raf = null;
+        card.style.setProperty('--mx', mx.toFixed(1) + '%');
+        card.style.setProperty('--my', my.toFixed(1) + '%');
+        if (!reduceMotion) {
+          card.style.transform = 'translateY(-3px) rotateX(' + tx.toFixed(2) + 'deg) rotateY(' + ty.toFixed(2) + 'deg)';
+        }
+      }
+      function schedule() { if (!raf) raf = requestAnimationFrame(apply); }
+      card.addEventListener('pointermove', function (e) {
+        var r = card.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width;
+        var py = (e.clientY - r.top) / r.height;
+        mx = px * 100; my = py * 100;
+        ty = (px - .5) * 2 * MAX_TILT;
+        tx = -(py - .5) * 2 * MAX_TILT;
+        card.classList.add('spot-on');
+        if (!reduceMotion) card.classList.add('tilting');
+        schedule();
+      });
+      card.addEventListener('pointerleave', function () {
+        card.classList.remove('spot-on', 'tilting');
+        card.style.transform = '';
+        card.style.setProperty('--mx', '50%');
+        card.style.setProperty('--my', '50%');
+      });
+    });
+  })();
+
+  /* ==========================================================
+     27. 星尘拖尾（Hero 区跟随光标的小星星，呼应「星记」）
+     ========================================================== */
+  (function initStarDust() {
+    var hero = $('.hero');
+    if (!hero || reduceMotion) return;
+    if (!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches)) return;
+    var CAP = 34, MIN_GAP = 30, last = 0;
+    var alive = 0;
+    var COLORS = ['var(--gold)', 'var(--accent)', 'var(--gold)'];
+
+    function spawn(x, y, opts) {
+      if (alive >= CAP) return;
+      alive++;
+      var d = doc.createElement('span');
+      d.className = 'star-dust';
+      d.setAttribute('aria-hidden', 'true');
+      var size = (opts && opts.size) || (3.5 + Math.random() * 5);
+      var dur = (opts && opts.dur) || (900 + Math.random() * 600);
+      d.style.left = x + 'px';
+      d.style.top = y + 'px';
+      d.style.fontSize = size.toFixed(1) + 'px';
+      d.style.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      d.style.setProperty('--dur', dur + 'ms');
+      d.style.setProperty('--dx', ((opts && opts.dx) || (Math.random() * 60 - 30)).toFixed(0) + 'px');
+      d.style.setProperty('--dy', ((opts && opts.dy) || (-18 - Math.random() * 46)).toFixed(0) + 'px');
+      d.style.setProperty('--rot', (Math.random() * 160 - 80).toFixed(0) + 'deg');
+      d.textContent = Math.random() < .75 ? '✦' : '·';
+      d.addEventListener('animationend', function () { d.remove(); alive--; });
+      hero.appendChild(d);
+    }
+    function local(e) {
+      var r = hero.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+    hero.addEventListener('pointermove', function (e) {
+      var now = e.timeStamp || Date.now();
+      if (now - last < MIN_GAP) return;
+      last = now;
+      var p = local(e);
+      spawn(p.x, p.y);
+    });
+    // 点击来一发小爆发（避开按钮与链接）
+    hero.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('a, button')) return;
+      var p = local(e);
+      for (var i = 0; i < 8; i++) {
+        var ang = (Math.PI * 2 * i) / 8 + Math.random() * .5;
+        var dist = 26 + Math.random() * 30;
+        spawn(p.x, p.y, {
+          dx: Math.cos(ang) * dist, dy: Math.sin(ang) * dist - 14,
+          size: 4 + Math.random() * 4, dur: 800 + Math.random() * 500
+        });
+      }
+    });
+  })();
+
+  /* ==========================================================
+     28. 首屏视差（内容缓下沉、星空缓上移，制造纵深）
+     ========================================================== */
+  (function initHeroParallax() {
+    var hero = $('.hero');
+    var inner = $('.hero-inner');
+    if (!hero || !inner || reduceMotion) return;
+    var field = $('.starfield', hero);
+    var h = 0;
+    function measure() { h = hero.offsetHeight; }
+    measure();
+    var rzTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(rzTimer);
+      rzTimer = setTimeout(measure, 150);
+    });
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var y = window.scrollY || window.pageYOffset;
+      if (y > h) { inner.style.transform = ''; if (field) field.style.transform = ''; return; }
+      inner.classList.add('para');
+      inner.style.transform = 'translateY(' + (y * .14).toFixed(1) + 'px)';
+      if (field) field.style.transform = 'translateY(' + (y * .06).toFixed(1) + 'px)';
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
   })();
 
 })();

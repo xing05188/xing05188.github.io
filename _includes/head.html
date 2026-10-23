@@ -95,3 +95,6 @@
   } catch (e) {}
 })();
 </script>
+
+<!-- 主页特效预备态：JS 已启用但尚未初始化时先藏首屏标题（main.js 就绪后逐字入场；无 JS 时不受影响） -->
+<script>document.documentElement.setAttribute('data-js', 'pre');</script>

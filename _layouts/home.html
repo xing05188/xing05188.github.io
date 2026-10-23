@@ -4,7 +4,7 @@ layout: default
 
 {% comment %} ---------- 全站统计（Liquid 预计算） ---------- {% endcomment %}
 {% assign total_words = 0 %}
-{% for post in site.posts %}{% assign total_words = total_words | plus: post.content | strip_html | strip_newlines | size %}{% endfor %}
+{% for post in site.posts %}{% assign pc = post.content | strip_html | strip_newlines | size %}{% assign total_words = total_words | plus: pc %}{% endfor %}
 {% assign start_ts = site.data.site.started | date: '%s' %}
 {% assign now_ts = 'now' | date: '%s' %}
 {% assign run_days = now_ts | minus: start_ts | divided_by: 86400 %}
