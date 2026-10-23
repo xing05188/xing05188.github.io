@@ -37,7 +37,7 @@ permalink: /about/
 | 内容页 | 归档（年度产量图 + 标签筛选）、标签（权重云）、数据统计（写作热力图 / 星期习惯 / 标签 Top / 分类构成）、书单、友链、时间线、系列合集、留言板、站点导航 |
 | 文章页 | 字数与阅读时长、图片灯箱、代码块一键复制与长代码折叠、MathJax 数学公式、点赞、分享（复制 / 微博 / X / Telegram）、版权卡片 |
 | 工程 | PWA（可安装、离线可读、更新提示）、结构化数据 SEO、Open Graph 分享卡、RSS 全文输出、sitemap、robots.txt |
-| 细节 | 顶部公告栏、返回顶部、入场动效（尊重 `prefers-reduced-motion`）、键盘可达、打印友好 |
+| 细节 | 顶部公告栏、返回顶部、入场动效（尊重 `prefers-reduced-motion`）、键盘可达、打印友好；彩蛋：在键盘上输入 `wish` 召唤流星雨 |
 
 ### 技术选型
 
@@ -106,10 +106,8 @@ og_image: /assets/img/xxx.png         # 自定义分享卡（可选）
 
 ### 评论
 
-仓库已经开启了 Discussions，`repo-id` 和 `category-id` 也都填在了
-`_layouts/post.html`（文章页）和 `guestbook.md`（留言板）里 —— 只差最后一步：去 [giscus](https://github.com/apps/giscus)
-安装应用并授权本仓库，然后把这两处底部注释块的首尾标记去掉。十分钟搞定，之后每篇文章
-和留言板都会自动对应一个 Discussion 线程。
+评论用 **giscus**（基于 GitHub Discussions）：每篇文章和留言板都会自动对应一个 Discussion 线程，
+用一个 GitHub 账号就能留言、回复、点赞，无广告、可订阅、可随时删除自己的留言。
 
 ## 联系我
 

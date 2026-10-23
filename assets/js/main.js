@@ -4,7 +4,8 @@
         代码块 / 星空画布 / 打字机 / 随机文章 / 点赞 / 分享 / 灯箱 / 动效 /
         阅读字号 / 快捷键帮助 / 归档标签筛选 / Service Worker 更新提示 /
         主页特效：标题逐字渐入 / 数字滚动 / 磁性按钮 / 卡片聚光灯+3D 倾斜 /
-        星尘拖尾 / 首屏视差
+        星尘拖尾 / 首屏视差 / 星标伴生光标 / 流星雨彩蛋 /
+        标题字符波浪 / 点赞粒子 / 彩蛋提示
    ============================================================ */
 (function () {
   'use strict';
@@ -446,7 +447,7 @@
       if (raw && kws.length === 1 && raw.length >= 2) { pushHistory(raw); bumpHot(raw); renderChips(); }
 
       if (!hits.length) {
-        out.innerHTML = '<div class="search-empty">换个关键词试试？支持拼音首字母，比如「jk」「博客」「git」。</div>';
+        out.innerHTML = '<div class="search-empty">换个关键词试试？支持拼音首字母，比如「jszn」「博客」「git」。</div>';
         return;
       }
 
@@ -887,9 +888,36 @@
         btn.classList.remove('pop');
         void btn.offsetWidth;
         btn.classList.add('pop');
+        burstStars(btn);
         toast('感谢点赞 ♥');
       }
     });
+
+    // 点赞粒子爆发：以按钮为中心扇形飞出星标/爱心
+    function removeOnEnd(el) {
+      el.addEventListener('animationend', function () { el.remove(); });
+    }
+    function burstStars(el) {
+      if (reduceMotion) return;
+      var rect = el.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
+      for (var i = 0; i < 12; i++) {
+        var s = doc.createElement('span');
+        s.className = 'like-star';
+        s.textContent = i % 2 ? '✦' : '♥';
+        var ang = (i / 12) * Math.PI * 2 + Math.random() * .5;
+        var dist = 34 + Math.random() * 32;
+        s.style.left = cx + 'px';
+        s.style.top = cy + 'px';
+        s.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
+        s.style.setProperty('--dy', (Math.sin(ang) * dist - 16).toFixed(1) + 'px');
+        s.style.setProperty('--rot', Math.round(-60 + Math.random() * 120) + 'deg');
+        s.style.setProperty('--dur', (.6 + Math.random() * .35).toFixed(2) + 's');
+        removeOnEnd(s);
+        doc.body.appendChild(s);
+      }
+    }
   })();
 
   /* ==========================================================
@@ -1207,11 +1235,9 @@
   })();
 
   /* ==========================================================
-     24. Hero 统计数字滚动（easeOutCubic，进入即播）
+     24. 统计数字滚动（Hero 进入即播；侧边栏滚入视口再播）
      ========================================================== */
   (function initCountUp() {
-    var els = $$('.hero-meta .stat b');
-    if (!els.length) return;
     if (reduceMotion) return;
     var DURATION = 1000;
     function animate(el) {
@@ -1228,7 +1254,25 @@
       }
       requestAnimationFrame(frame);
     }
-    setTimeout(function () { els.forEach(animate); }, 420);
+
+    // Hero：进入即播
+    var heroEls = $$('.hero-meta .stat b');
+    if (heroEls.length) setTimeout(function () { heroEls.forEach(animate); }, 420);
+
+    // 侧边栏「小站统计」：滚入视口时再滚动（只播一次）
+    var sideEls = $$('.stat-cell b');
+    if (sideEls.length && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          animate(en.target);
+          io.unobserve(en.target);
+        });
+      }, { threshold: .4 });
+      sideEls.forEach(function (el) { io.observe(el); });
+    } else {
+      sideEls.forEach(animate);
+    }
   })();
 
   /* ==========================================================
@@ -1377,6 +1421,161 @@
       if (!ticking) { ticking = true; requestAnimationFrame(update); }
     }, { passive: true });
     update();
+  })();
+
+  /* ==========================================================
+     29. 星标伴生光标（仅桌面精细指针；延迟跟随 + 拖尾微粒 + 点击弹跳）
+     ========================================================== */
+  (function initStarCursor() {
+    if (reduceMotion) return;
+    if (!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches)) return;
+
+    var star = doc.createElement('div');
+    star.className = 'star-cursor';
+    star.setAttribute('aria-hidden', 'true');
+    var glyph = doc.createElement('span');
+    glyph.className = 'sc-star';
+    glyph.textContent = '✦';
+    star.appendChild(glyph);
+    doc.body.appendChild(star);
+
+    var tx = window.innerWidth / 2, ty = window.innerHeight / 2;
+    var x = tx, y = ty;
+    var lastTrail = 0;
+    var trailCount = 0;
+
+    window.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch') return;
+      tx = e.clientX; ty = e.clientY;
+      star.classList.remove('dim');
+      var now = e.timeStamp || Date.now();
+      if (now - lastTrail > 90) {
+        lastTrail = now;
+        spawnTrail(tx, ty);
+      }
+    }, { passive: true });
+
+    doc.addEventListener('mouseleave', function () { star.classList.add('dim'); });
+    doc.addEventListener('mouseenter', function () { star.classList.remove('dim'); });
+
+    window.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch') return;
+      glyph.classList.remove('tap');
+      void glyph.offsetWidth;
+      glyph.classList.add('tap');
+    }, { passive: true });
+
+    function spawnTrail(px, py) {
+      if (trailCount > 24) return;
+      var dot = doc.createElement('div');
+      dot.className = 'cursor-trail';
+      dot.style.left = px + 'px';
+      dot.style.top = py + 'px';
+      doc.body.appendChild(dot);
+      trailCount++;
+      dot.addEventListener('animationend', function () {
+        dot.remove();
+        trailCount = Math.max(0, trailCount - 1);
+      });
+    }
+
+    (function loop() {
+      x += (tx - x) * .16;
+      y += (ty - y) * .16;
+      var rot = Math.max(-40, Math.min(40, (tx - x) * .55));
+      star.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)';
+      glyph.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      requestAnimationFrame(loop);
+    })();
+  })();
+
+  /* ==========================================================
+     30. 流星雨彩蛋：输入 wish 或 Konami 秘技触发
+     （避开 t / / ? 等已占用快捷键，防止误触主题切换等）
+     ========================================================== */
+  (function initMeteorShower() {
+    if (reduceMotion) return;
+    var CODE = 'wish';
+    var KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    var buffer = '';
+    var konamiIdx = 0;
+    var running = false;
+
+    window.addEventListener('keydown', function (e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      var t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+
+      var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      buffer = (buffer + k).slice(-CODE.length);
+      if (buffer === CODE) { fire(false); return; }
+      if (k === KONAMI[konamiIdx]) {
+        konamiIdx++;
+        if (konamiIdx === KONAMI.length) { konamiIdx = 0; fire(true); }
+      } else {
+        konamiIdx = (k === KONAMI[0]) ? 1 : 0;
+      }
+    });
+
+    function fire(isKonami) {
+      if (running) return;
+      running = true;
+      toast(isKonami ? '✦ 上古秘技已激活' : '✦ 流星雨来了');
+      var count = isKonami ? 22 : 14;
+      for (var i = 0; i < count; i++) {
+        setTimeout(spawnMeteor, i * 130 + Math.random() * 90);
+      }
+      setTimeout(function () { running = false; }, count * 130 + 1800);
+    }
+
+    function spawnMeteor() {
+      var m = doc.createElement('div');
+      m.className = 'meteor';
+      m.setAttribute('aria-hidden', 'true');
+      m.style.setProperty('--x0', (-12 + Math.random() * 60).toFixed(1) + 'vw');
+      m.style.setProperty('--y0', (-10 + Math.random() * 40).toFixed(1) + 'vh');
+      m.style.setProperty('--dur', (.85 + Math.random() * .7).toFixed(2) + 's');
+      doc.body.appendChild(m);
+      m.addEventListener('animationend', function () { m.remove(); });
+    }
+  })();
+
+  /* ==========================================================
+     31. 卡片标题悬停字符波浪（逐字上跳，按索引错峰）
+     ========================================================== */
+  (function initTitleWave() {
+    if (reduceMotion) return;
+    if (!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches)) return;
+    $$('.post-card h3').forEach(function (h3) {
+      var idx = 0;
+      Array.prototype.slice.call(h3.childNodes).forEach(function (n) {
+        if (n.nodeType !== 3 || !n.nodeValue.trim()) return;
+        var text = n.nodeValue;
+        var frag = doc.createDocumentFragment();
+        for (var i = 0; i < text.length; i++) {
+          var ch = text.charAt(i);
+          if (ch === ' ') { frag.appendChild(doc.createTextNode(' ')); continue; }
+          var sp = doc.createElement('span');
+          sp.className = 'wv';
+          sp.style.setProperty('--i', idx++);
+          sp.textContent = ch;
+          frag.appendChild(sp);
+        }
+        h3.replaceChild(frag, n);
+      });
+    });
+  })();
+
+  /* ==========================================================
+     32. 彩蛋提示（每设备只提示一次）
+     ========================================================== */
+  (function initEggHint() {
+    if (!$('.hero')) return;
+    if (store.get('egg-hinted', '') === '1') return;
+    setTimeout(function () {
+      store.set('egg-hinted', '1');
+      toast('彩蛋：在键盘上输入 wish 召唤流星雨', '知道了');
+    }, 9000);
   })();
 
 })();

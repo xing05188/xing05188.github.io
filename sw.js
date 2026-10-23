@@ -1,9 +1,10 @@
 /* ============================================================
    星记 · Service Worker
-   策略：静态资源 cache-first（更新后自动换新）；页面 network-first，
-   离线时回退到缓存；导航失败时展示缓存的 404 页。
+   策略：静态资源 stale-while-revalidate（先返回缓存保证速度，
+   后台拉取新版并更新缓存，资源更新后下一次加载即生效）；
+   页面 network-first，离线时回退到缓存；导航失败时展示缓存的 404 页。
    ============================================================ */
-var VERSION = 'xingji-v4';
+var VERSION = 'xingji-v5';
 var SHELL = [
   '/',
   '/archive/',
@@ -20,6 +21,7 @@ var SHELL = [
   '/nav/',
   '/404.html',
   '/manifest.webmanifest',
+  '/search.json',
   '/assets/css/main.css',
   '/assets/css/syntax.css',
   '/assets/js/main.js',
@@ -58,15 +60,18 @@ self.addEventListener('fetch', function (e) {
   if (url.pathname.indexOf('/workbench') === 0 ||
       /\/assets\/(css|js)\/(workbench|md)\.(css|js)$/.test(url.pathname)) return;
 
-  // 静态资源：cache-first
+  // 静态资源：stale-while-revalidate
   if (/\.(css|js|png|svg|woff2?|webmanifest)$/.test(url.pathname)) {
     e.respondWith(
       caches.match(req).then(function (hit) {
-        return hit || fetch(req).then(function (res) {
-          var copy = res.clone();
-          caches.open(VERSION).then(function (c) { c.put(req, copy); });
+        var net = fetch(req).then(function (res) {
+          if (res && res.ok) {
+            var copy = res.clone();
+            caches.open(VERSION).then(function (c) { c.put(req, copy); });
+          }
           return res;
-        });
+        }).catch(function () { return hit; });
+        return hit || net;
       })
     );
     return;

@@ -11,15 +11,7 @@ comments: true
   <p>评论基于 <b>GitHub Discussions</b>（giscus）—— 需要一个 GitHub 账号，无广告、可订阅、随时删除自己的留言。</p>
 </div>
 
-> 第一次使用需要站长安装 giscus 应用（约 10 秒）：打开 [github.com/apps/giscus](https://github.com/apps/giscus)，Install 并仅授权本仓库。装好后评论框就会出现在下面。
-{:.tip}
-
-> 也可以直接发邮件：<2351289@tongji.edu.cn>，或去 [GitHub](https://github.com/xing05188) 上开个 issue。
-{:.note}
-
-<!--
-  留言板评论区（与文章页同一套 giscus 配置）
-  安装 giscus 应用后，把本注释块的首尾标记去掉即可启用。
+<!-- 留言板评论区（giscus，与文章页同一套配置） -->
 <div class="comments">
   <script src="https://giscus.app/client.js"
     data-repo="xing05188/xing05188.github.io"
@@ -37,7 +29,6 @@ comments: true
     crossorigin="anonymous" async>
   </script>
 </div>
--->
 
 <h2 style="margin-top:38px">留言格式建议</h2>
 <ul>
