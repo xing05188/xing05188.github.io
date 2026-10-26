@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从零理解 StreamVLN</title>
+<style>
+  :root{
+    --ink:#17211d;
+    --ink-soft:#4a5a53;
+    --ink-faint:#7c8a83;
+    --paper:#fbf9f5;
+    --card:#ffffff;
+    --line:#e4dfd4;
+    --line-strong:#cfc7b8;
+    --accent:#a8431f;
+    --accent-soft:#f6e8e0;
+    --green:#1d4b3d;
+    --green-soft:#e6efea;
+    --amber:#b8862f;
+    --blue:#2b5570;
+    --blue-soft:#e4edf2;
+    --serif:"Noto Serif CJK SC","Source Han Serif SC","Songti SC",Georgia,serif;
+    --sans:"Noto Sans CJK SC","Source Han Sans SC","PingFang SC","Microsoft YaHei",-apple-system,sans-serif;
+    --mono:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:17px;line-height:1.9;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:radial-gradient(rgba(23,33,29,.035) 1px,transparent 1px);
+    background-size:4px 4px;opacity:.6;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;z-index:1;background:#10231d;color:#f3efe4;
+    padding:76px 40px 64px;overflow:hidden;
+  }
+  .hero::after{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(circle at 82% 12%, rgba(184,134,47,.30), transparent 46%),
+      radial-gradient(circle at 12% 92%, rgba(43,85,112,.45), transparent 52%);
+  }
+  .hero-inner{position:relative;z-index:2;max-width:1080px;margin:0 auto}
+  .kicker{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:#c9b98d;border:1px solid rgba(201,185,141,.35);
+    padding:7px 14px;border-radius:2px;
+  }
+  .kicker i{width:5px;height:5px;background:#c9b98d;border-radius:50%;display:block}
+  .hero h1{
+    font-family:var(--serif);font-weight:700;font-size:clamp(38px,6.4vw,66px);
+    line-height:1.12;letter-spacing:-.01em;margin:26px 0 0;
+  }
+  .hero h1 em{font-style:normal;color:#e0b464}
+  .hero .sub{
+    margin-top:22px;font-size:clamp(16px,2.1vw,20px);line-height:1.75;
+    color:#c3cec8;max-width:720px;font-weight:300;
+  }
+  .hero .meta{
+    margin-top:44px;display:flex;flex-wrap:wrap;gap:12px 34px;
+    font-size:13px;color:#93a49c;letter-spacing:.02em;
+    border-top:1px solid rgba(255,255,255,.12);padding-top:20px;
+  }
+  .hero .meta b{color:#ddd6c4;font-weight:500}
+
+  /* ---------- LAYOUT ---------- */
+  .shell{
+    position:relative;z-index:1;max-width:1120px;margin:0 auto;
+    display:grid;grid-template-columns:212px minmax(0,1fr);gap:56px;
+    padding:64px 40px 120px;
+  }
+  nav.toc{position:sticky;top:32px;align-self:start;font-size:13.5px}
+  nav.toc .toc-title{
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-faint);padding-bottom:12px;border-bottom:1px solid var(--line);
+    margin-bottom:14px;
+  }
+  nav.toc a{
+    display:block;color:var(--ink-soft);text-decoration:none;
+    padding:6px 0 6px 12px;border-left:2px solid transparent;border-bottom:none;
+    line-height:1.5;transition:.18s;
+  }
+  nav.toc a:hover{color:var(--accent)}
+  nav.toc a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+  nav.toc a .n{color:var(--ink-faint);font-family:var(--mono);font-size:11px;margin-right:6px}
+  nav.toc a.active .n{color:var(--accent)}
+
+  main{min-width:0;max-width:752px}
+  section{scroll-margin-top:28px}
+
+  /* ---------- TYPOGRAPHY ---------- */
+  h2{
+    font-family:var(--serif);font-weight:700;font-size:clamp(27px,3.3vw,34px);
+    line-height:1.3;margin:0 0 8px;letter-spacing:-.005em;
+  }
+  h2 .num{
+    display:block;font-family:var(--mono);font-size:12px;font-weight:500;
+    letter-spacing:.24em;color:var(--accent);margin-bottom:12px;
+  }
+  h3{
+    font-family:var(--serif);font-weight:700;font-size:21px;line-height:1.5;
+    margin:44px 0 10px;
+  }
+  h4{font-size:16px;font-weight:700;margin:28px 0 6px;color:var(--ink)}
+  p{margin:0 0 20px}
+  p.lead{font-size:19px;line-height:1.85;color:var(--ink-soft)}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(168,67,31,.3)}
+  a:hover{border-bottom-color:var(--accent)}
+  strong{font-weight:700;color:var(--ink)}
+  em{font-style:normal;background:linear-gradient(transparent 62%,rgba(184,134,47,.28) 62%);padding:0 1px}
+  code{
+    font-family:var(--mono);font-size:.86em;background:#f0ece2;
+    padding:2px 5px;border-radius:3px;color:#5a3d2b;
+  }
+  .rule{height:1px;background:var(--line);border:0;margin:56px 0}
+  .sec-head{margin-top:72px}
+  .sec-head:first-child{margin-top:0}
+
+  /* ---------- COMPONENTS ---------- */
+  .tldr{
+    background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);
+    padding:26px 30px;margin:34px 0 8px;box-shadow:0 1px 0 rgba(0,0,0,.02);
+  }
+  .tldr h4{margin:0 0 12px;font-size:12px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase}
+  .tldr p{margin-bottom:10px}
+  .tldr p:last-child{margin-bottom:0}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:28px 0 32px}
+  .card{
+    background:var(--card);border:1px solid var(--line);padding:20px 18px;
+  }
+  .card .k{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.1em}
+  .card h5{font-size:15.5px;margin:8px 0 6px;font-weight:700}
+  .card p{font-size:13.5px;line-height:1.7;color:var(--ink-soft);margin:0}
+
+  blockquote{
+    margin:26px 0;padding:2px 0 2px 22px;border-left:2px solid var(--line-strong);
+    color:var(--ink-soft);font-family:var(--serif);font-size:17.5px;
+  }
+  blockquote p:last-child{margin-bottom:0}
+  blockquote.seq{border-left-color:var(--accent);padding-left:26px}
+  blockquote.seq p{
+    font-family:var(--serif);font-size:32px;line-height:1.4;letter-spacing:.16em;
+    color:var(--accent);font-weight:700;
+  }
+
+  .note{
+    background:var(--green-soft);border:1px solid #cddfd5;padding:18px 22px;
+    margin:26px 0;font-size:15px;line-height:1.8;color:#20443a;
+  }
+  .note .tag{
+    display:inline-block;font-size:10.5px;letter-spacing:.16em;font-weight:700;
+    color:#1d4b3d;background:#fff;border:1px solid #b9d0c4;padding:2px 8px;margin-right:8px;
+    vertical-align:1px;text-transform:uppercase;
+  }
+  .warn{background:#fdf3e7;border-color:#eed6b3;color:#7a4f14}
+  .warn .tag{color:#8a5b16;border-color:#e3c79a}
+
+  /* ---------- FIGURE ---------- */
+  figure{margin:34px 0 38px}
+  figure .frame{
+    background:var(--card);border:1px solid var(--line);padding:26px 20px 18px;overflow:hidden;
+  }
+  figure svg{display:block;width:100%;height:auto}
+  figcaption{
+    font-size:12.5px;color:var(--ink-faint);margin-top:12px;line-height:1.7;
+    padding-left:2px;
+  }
+  figcaption b{color:var(--ink-soft);font-weight:600}
+
+  /* ---------- TABLE ---------- */
+  .table-wrap{overflow-x:auto;margin:26px 0 32px;border:1px solid var(--line);background:var(--card)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;line-height:1.6}
+  th{
+    background:#f5f1e8;text-align:left;padding:11px 14px;font-weight:700;
+    font-size:12px;letter-spacing:.04em;color:var(--ink-soft);border-bottom:1px solid var(--line-strong);
+    white-space:nowrap;
+  }
+  td{padding:10px 14px;border-bottom:1px solid #eee9df;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.num,th.num{text-align:right;font-family:var(--mono);font-size:12.5px}
+  tr.hl td{background:#fdf8ee;font-weight:600}
+  tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  .cap{font-size:12.5px;color:var(--ink-faint);margin:-22px 0 32px;line-height:1.7}
+
+  /* ---------- MISC ---------- */
+  .pill{
+    display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:20px;
+    background:var(--accent-soft);color:var(--accent);border:1px solid #e8cfc2;
+    margin-right:6px;vertical-align:middle;font-weight:600;
+  }
+  .steps{counter-reset:s;margin:26px 0;padding:0;list-style:none}
+  .steps li{
+    counter-increment:s;position:relative;padding:0 0 20px 46px;margin:0;
+    border-left:1px solid var(--line);margin-left:13px;
+  }
+  .steps li:last-child{border-left-color:transparent;padding-bottom:0}
+  .steps li::before{
+    content:counter(s);position:absolute;left:-13px;top:0;width:26px;height:26px;
+    background:var(--paper);border:1px solid var(--line-strong);border-radius:50%;
+    font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;
+    color:var(--accent);font-weight:700;
+  }
+  .steps li b{display:block;margin-bottom:3px}
+  .steps li span{color:var(--ink-soft);font-size:15.5px;line-height:1.8}
+
+  ul.refs{font-size:15px;line-height:2}
+  .kv{display:grid;grid-template-columns:120px 1fr;gap:6px 20px;margin:24px 0;font-size:15px}
+  .kv dt{color:var(--ink-faint);font-size:12.5px;letter-spacing:.08em;padding-top:3px}
+  .kv dd{margin:0}
+
+  footer{
+    background:#10231d;color:#93a49c;padding:54px 40px 60px;position:relative;z-index:1;
+  }
+  footer .fin{max-width:1120px;margin:0 auto}
+  footer h6{font-family:var(--serif);color:#e6dfcd;font-size:20px;margin:0 0 14px;font-weight:700}
+  footer p{font-size:13.5px;line-height:1.9;margin:0 0 8px;max-width:640px}
+  footer a{color:#d8bd85;border-bottom-color:rgba(216,189,133,.35)}
+
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr;gap:0;padding:44px 24px 80px}
+    nav.toc{display:none}
+    .hero{padding:56px 24px 46px}
+    .cards{grid-template-columns:1fr}
+    .kv{grid-template-columns:1fr;gap:0 0}
+    .kv dt{margin-top:10px}
+  }
+
+  @page{size:A4;margin:14mm 15mm 16mm}
+  @media print{
+    body{background:#fff;font-size:10pt;line-height:1.75}
+    body::before{display:none}
+    .hero{padding:18mm 15mm 12mm;margin:-14mm -15mm 0;background:#10231d !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .hero h1{font-size:34pt}
+    .hero .sub{font-size:11pt;max-width:none}
+    .hero .meta{margin-top:8mm;padding-top:5mm;font-size:8pt}
+    .shell{display:block;max-width:none;padding:8mm 0 0}
+    nav.toc{display:none}
+    main{max-width:none}
+    .sec-head{margin-top:26px}
+    figure,table,.tldr,.note,blockquote,.cards,pre{page-break-inside:avoid}
+    h2,h3,h4{page-break-after:avoid}
+    h2{font-size:20pt}
+    h3{font-size:13pt;margin-top:18px}
+    p{margin-bottom:9px}
+    table{font-size:7.8pt;table-layout:auto}
+    th,td{padding:5px 6px}
+    th{white-space:normal;font-size:7.2pt}
+    th:not([colspan]):not([rowspan]){white-space:nowrap}
+    .cards{grid-template-columns:repeat(3,1fr);gap:8px}
+    .card{padding:12px 10px}
+    .card p{font-size:8pt}
+    .kv{grid-template-columns:118px 1fr;gap:4px 12px;font-size:9pt}
+    tr.hl td:first-child{padding-left:9px}
+    .kv dt{font-size:8pt}
+    figure{margin:14px 0 20px}
+    figure .frame{padding:12px 12px 8px}
+    figure svg{max-height:82mm;width:auto;margin:0 auto}
+    figcaption{font-size:7.8pt}
+    .cap{font-size:7.8pt;margin:-10px 0 16px}
+    table.glossary{font-size:7.4pt}
+    table.glossary td{padding:3px 6px}
+    ul.refs{font-size:8.4pt;line-height:1.6;margin:8px 0 0;padding-left:16px}
+    ul.refs li{margin-bottom:2px}
+    pre{font-size:7.4pt !important;padding:10px 12px !important;white-space:pre-wrap}
+    footer{display:none}
+    a{color:#a8431f;border-bottom:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="kicker"><i></i>Embodied AI · 论文拆解</div>
+    <h1>从零理解 <em>StreamVLN</em><br>让机器人听懂人话，边走边想</h1>
+    <p class="sub">
+      一个把「连续视频流 + 自然语言指令」变成「一步一步往哪走」的框架。
+      这份文档假设你完全没接触过具身智能、没读过大模型论文，从最基础的概念讲起。
+    </p>
+    <div class="meta">
+      <span>论文 <b>arXiv:2507.05240</b> · ICRA 2026</span>
+      <span>机构 <b>上海 AI Lab 等</b></span>
+      <span>整理于 <b>2026-10-25</b></span>
+      <span>预计阅读 <b>25 分钟</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="toc" id="toc">
+  <div class="toc-title">目录</div>
+  <a href="#s0"><span class="n">00</span>先看结论</a>
+  <a href="#s1"><span class="n">01</span>这个任务是什么</a>
+  <a href="#s2"><span class="n">02</span>为什么需要「流式」</a>
+  <a href="#s3"><span class="n">03</span>核心思想：快与慢</a>
+  <a href="#s4"><span class="n">04</span>快通道：KV 缓存</a>
+  <a href="#s5"><span class="n">05</span>慢通道：体素剪枝</a>
+  <a href="#s6"><span class="n">06</span>动作怎么输出</a>
+  <a href="#s7"><span class="n">07</span>怎么训练出来</a>
+  <a href="#s8"><span class="n">08</span>成绩单怎么读</a>
+  <a href="#s9"><span class="n">09</span>同类工作坐标</a>
+  <a href="#s10"><span class="n">10</span>诚实地看局限</a>
+  <a href="#s11"><span class="n">11</span>动手路线</a>
+  <a href="#s12"><span class="n">12</span>术语表</a>
+</nav>
+
+<main>
+
+<!-- ============ 0 ============ -->
+<section id="s0">
+  <div class="sec-head">
+    <h2><span class="num">00 / THE SHORT VERSION</span>先用三分钟，建立整体印象</h2>
+  </div>
+
+  <p class="lead">
+    如果只记一句话：<strong>StreamVLN 是一个让机器人「看着连续的摄像头画面、听着人的一句话指令、实时决定下一步往哪走」的模型框架。</strong>
+  </p>
+
+  <p>
+    它属于一个叫 <strong>视觉语言导航</strong>（Vision-and-Language Navigation，简称 VLN）的研究方向。这个方向要解决的事情，说白了就是：
+    你对着一台机器人说「走进厨房，绕过餐桌，在冰箱前停下」，它得自己看懂画面、找到路、走过去。
+  </p>
+
+  <p>
+    这件事听起来像扫地机器人，但难度完全不同。扫地机器人是在一张已知地图上撞来撞去；而 VLN 要求机器人<em>理解一句它从没听过的话</em>，并且在<em>从没来过的房子里</em>把这句话变成一连串正确的动作。
+  </p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="k">PROBLEM 01</div>
+      <h5>看得要细</h5>
+      <p>画面里的门、台阶、沙发扶手，任何一个细节都可能决定该不该往前。</p>
+    </div>
+    <div class="card">
+      <div class="k">PROBLEM 02</div>
+      <h5>记得要久</h5>
+      <p>走了三分钟，得记得「我已经经过厨房了」，否则会原地打转。</p>
+    </div>
+    <div class="card">
+      <div class="k">PROBLEM 03</div>
+      <h5>反应要快</h5>
+      <p>真实机器人不能想 5 秒才走一步，人会撞上来，控制也会抖。</p>
+    </div>
+  </div>
+
+  <p>
+    这三件事互相打架。想看得细，就要多保留画面细节，计算量大；想记得久，就要把很长的历史都塞进模型，更慢；想反应快，就只能看最近几帧，于是「失忆」。
+    过去的方法基本都在这个三角里做取舍，牺牲一个换另外两个。
+  </p>
+
+  <div class="tldr">
+    <h4>StreamVLN 的答案</h4>
+    <p>
+      它把「记忆」拆成两条通道，像人走路时的大脑一样分工：
+    </p>
+    <p>
+      <strong>快通道</strong>——只保留最近一小段「看到什么 → 做了什么」的对话，用 <strong>KV 缓存复用</strong>让每一步几乎不用重算，保证反应快。
+    </p>
+    <p>
+      <strong>慢通道</strong>——把更早的画面压成一份「空间记忆」，用 <strong>3D 体素剪枝</strong>把重复的画面扔掉，只留每个空间位置上最新的那一小块，保证不乱、不爆内存。
+    </p>
+    <p>
+      两条通道合起来，模型就能在<strong>上下文长度有上限、算力有上限</strong>的前提下，一直走下去。
+    </p>
+  </div>
+
+  <p>
+    成绩上，它在两个公开测试集 R2R-CE 和 RxR-CE 上拿到了「只用 RGB 摄像头」这一类方法里的最好结果；在真机（宇树 Go2 机器狗）上，<strong>0.27 秒就能吐出 4 个动作</strong>，够实时用了。
+  </p>
+
+  <div class="note">
+    <span class="tag">读法建议</span>
+    如果你时间很少：读 00、03、06 三节就能明白它「是什么、怎么想的、怎么动的」。
+    想彻底搞懂：按顺序读，第 04、05 节是技术核心，第 08 节教你怎么看论文里的表格。
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <div class="sec-head">
+    <h2><span class="num">01 / THE TASK</span>这个任务到底是什么</h2>
+  </div>
+
+  <h3>1.1 一个具体场景，走一遍</h3>
+
+  <p>
+    想象你被蒙上眼睛放进一栋陌生的房子，只给你一句话：「从客厅出发，经过走廊，在第二个卧室的床边停下。」然后有人扶着你往前走，每走一步告诉你「现在你看到的是……」。
+  </p>
+
+  <p>
+    你要做的事，就是不断重复一个循环：
+  </p>
+
+  <p>
+    <strong>看一眼现在的画面 → 回想一下刚才走过哪 → 对照那句话 → 决定下一小步是往前、左转、右转，还是停下。</strong>
+  </p>
+
+  <figure>
+    <div class="frame">
+      <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="视觉语言导航的任务循环">
+        <defs>
+          <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L8,4.5 L0,9 z" fill="#8b9a92"/>
+          </marker>
+        </defs>
+        <!-- instruction -->
+        <rect x="18" y="96" width="150" height="62" rx="3" fill="#f6e8e0" stroke="#d9b7a6"/>
+        <text x="93" y="122" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="13" fill="#8d3a1b" font-weight="700">语言指令</text>
+        <text x="93" y="141" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#8d3a1b">"经过走廊，床边停下"</text>
+
+        <!-- model -->
+        <rect x="228" y="76" width="132" height="102" rx="3" fill="#10231d"/>
+        <text x="294" y="112" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="14" fill="#f0e6cf" font-weight="700">导航模型</text>
+        <text x="294" y="132" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#9fb3a9">看 · 想 · 决定</text>
+        <text x="294" y="152" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#9fb3a9">（一个多模态大模型）</text>
+
+        <!-- action -->
+        <rect x="420" y="96" width="126" height="62" rx="3" fill="#e4edf2" stroke="#a9c0cf"/>
+        <text x="483" y="122" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="13" fill="#234a63" font-weight="700">动作</text>
+        <text x="483" y="141" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="12" fill="#234a63">↑ 前进 25 cm</text>
+
+        <!-- env -->
+        <rect x="606" y="80" width="76" height="94" rx="3" fill="#eef1e9" stroke="#c3cbb7"/>
+        <text x="644" y="118" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="12" fill="#41503a" font-weight="700">环境</text>
+        <text x="644" y="136" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#41503a">机器人</text>
+        <text x="644" y="150" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#41503a">真的动了</text>
+
+        <!-- arrows -->
+        <line x1="170" y1="127" x2="222" y2="127" stroke="#8b9a92" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="362" y1="127" x2="414" y2="127" stroke="#8b9a92" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="548" y1="127" x2="600" y2="127" stroke="#8b9a92" stroke-width="1.4" marker-end="url(#ar)"/>
+
+        <!-- feedback -->
+        <path d="M644,176 L644,214 L294,214 L294,182" fill="none" stroke="#8b9a92" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+        <text x="470" y="207" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#6d7a73">新的画面（这一步看到了什么）</text>
+
+        <!-- loop label -->
+        <text x="294" y="42" text-anchor="middle" font-family="Noto Serif CJK SC,serif" font-size="15" fill="#17211d" font-weight="700">这个循环每走一小步，就要转一圈</text>
+        <text x="294" y="62" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#7c8a83">一次任务可能转 50 到 300 圈</text>
+      </svg>
+    </div>
+    <figcaption><b>图 1</b>　VLN 的基本闭环。难点不在于单次判断，而在于这个循环要连续转几百次，每次都得对。</figcaption>
+  </figure>
+
+  <h3>1.2 三个角色：指令、观察、动作</h3>
+
+  <p>
+    任何 VLN 系统，输入输出都能归结成三样东西。记住这三个词，后面就不会迷路：
+  </p>
+
+  <dl class="kv">
+    <dt>指令 / Instruction</dt>
+    <dd>一句人写的自然语言，比如「走过沙发，然后在挂画的墙前左转」。通常 20 到 100 个词。</dd>
+    <dt>观察 / Observation</dt>
+    <dd>机器人当前看到的画面。真实机器人是摄像头连续视频；仿真里是一帧帧 RGB 图像（有时还带深度图）。</dd>
+    <dt>动作 / Action</dt>
+    <dd>下一步做什么。连续环境里通常是「前进 25 厘米 / 左转 15 度 / 右转 15 度 / 停止」这类底层指令。</dd>
+  </dl>
+
+  <p>
+    模型的全部工作，就是学会一个函数：<code>动作 = f(指令, 观察历史)</code>。听起来简单，但「历史」这两个字，就是整篇论文的战场。
+  </p>
+
+  <h3>1.3 为什么会有「连续环境」这个说法</h3>
+
+  <p>
+    早期的 VLN 研究（2018 年的 R2R 数据集）是在一个「离散」环境里做的：房子被抽象成一张由节点组成的图，机器人不是一个真的在走的东西，而是一个<strong>瞬移的观察者</strong>——它站在一个节点上，环顾四周，然后选择「跳到」相邻的某个节点。
+  </p>
+
+  <p>
+    这样做的好处是简单：动作空间只有「跳去哪个点」，不用考虑碰撞、不用考虑转几度。但坏处也很明显：真实机器人不会瞬移。
+  </p>
+
+  <figure>
+    <div class="frame">
+      <svg viewBox="0 0 700 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="离散环境与连续环境对比">
+        <!-- left -->
+        <text x="20" y="24" font-family="Noto Sans CJK SC,sans-serif" font-size="12.5" font-weight="700" fill="#4a5a53">离散环境（Discrete）</text>
+        <text x="20" y="44" font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#7c8a83">在节点之间瞬移，动作 = "去那个点"</text>
+
+        <line x1="70" y1="150" x2="180" y2="88" stroke="#cfc7b8" stroke-width="1.2"/>
+        <line x1="180" y1="88" x2="300" y2="140" stroke="#cfc7b8" stroke-width="1.2"/>
+        <line x1="180" y1="88" x2="270" y2="176" stroke="#cfc7b8" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <circle cx="70" cy="150" r="7" fill="#1d4b3d"/>
+        <circle cx="180" cy="88" r="7" fill="#fff" stroke="#1d4b3d" stroke-width="2"/>
+        <circle cx="300" cy="140" r="7" fill="#fff" stroke="#1d4b3d" stroke-width="2"/>
+        <circle cx="270" cy="176" r="7" fill="#fff" stroke="#1d4b3d" stroke-width="2"/>
+        <path d="M77,146 C110,130 145,108 172,94" fill="none" stroke="#a8431f" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="120" y="112" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#a8431f">一跳就到</text>
+        <text x="20" y="196" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#7c8a83">优点：好学　缺点：不真实</text>
+
+        <line x1="350" y1="20" x2="350" y2="190" stroke="#e4dfd4"/>
+
+        <!-- right -->
+        <text x="386" y="24" font-family="Noto Sans CJK SC,sans-serif" font-size="12.5" font-weight="700" fill="#4a5a53">连续环境（Continuous）</text>
+        <text x="386" y="44" font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#7c8a83">真的在走，动作 = 前进 / 转 15 度</text>
+
+        <path d="M410,160 C440,140 470,120 500,96 S580,78 640,72" fill="none" stroke="#a8431f" stroke-width="2"/>
+        <g fill="#a8431f">
+          <circle cx="410" cy="160" r="3"/><circle cx="440" cy="141" r="3"/><circle cx="470" cy="122" r="3"/>
+          <circle cx="500" cy="102" r="3"/><circle cx="530" cy="88" r="3"/><circle cx="560" cy="80" r="3"/>
+          <circle cx="595" cy="74" r="3"/><circle cx="640" cy="72" r="3"/>
+        </g>
+        <text x="500" y="140" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#a8431f">每一小步都要单独决策</text>
+        <text x="386" y="196" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#7c8a83">优点：接近真机　缺点：步数多、易漂移、易撞</text>
+      </svg>
+    </div>
+    <figcaption><b>图 2</b>　同一个任务，两种设定。StreamVLN 做的是右边这种（VLN-CE），难度高得多。</figcaption>
+  </figure>
+
+  <p>
+    2020 年，研究者提出了 <strong>VLN-CE</strong>（Continuous Environments），把 R2R 那套指令搬到连续环境里：机器人用第一人称视角的 RGB-D 相机，只能输出底层动作，还要处理碰撞、卡住、走歪。StreamVLN 全程都在 VLN-CE 设定下评测，这是它「能上真机」的前提。
+  </p>
+
+  <h3>1.4 评判标准：什么叫「走对了」</h3>
+
+  <p>
+    导航任务不像考试有标准答案，得有一套量化指标。论文里会反复出现这五个缩写，先混个眼熟，第 08 节会详细讲怎么读：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:88px">指标</th><th>含义</th><th style="width:74px">方向</th></tr></thead>
+      <tbody>
+        <tr><td><b>NE</b></td><td>Navigation Error，终点离目标还有多少米</td><td>越低越好</td></tr>
+        <tr><td><b>OS</b></td><td>Oracle Success，路上有没有「路过」目标 3 米内</td><td>越高越好</td></tr>
+        <tr><td><b>SR</b></td><td>Success Rate，最终有没有停在目标 3 米内</td><td>越高越好</td></tr>
+        <tr><td><b>SPL</b></td><td>Success weighted by Path Length，成功且没绕远路</td><td>越高越好</td></tr>
+        <tr><td><b>nDTW</b></td><td>整条轨迹和标准答案轨迹贴不贴合</td><td>越高越好</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    最重要的一般是 <strong>SR</strong> 和 <strong>SPL</strong>。SR 是「到没到」，SPL 是「到得干不干脆」——一个绕了整栋楼才到终点的机器人，SR 是满分，SPL 会很低。
+  </p>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <div class="sec-head">
+    <h2><span class="num">02 / THE PROBLEM</span>为什么非要「流式」不可</h2>
+  </div>
+
+  <p class="lead">
+    在 StreamVLN 之前，用大模型做导航已经有不错的方案了（比如 NaVid、NaVILA）。但它们都卡在同一个地方：<strong>大模型的上下文是有成本的，而导航的视频流是无限的。</strong>
+  </p>
+
+  <h3>2.1 先理解「token」这件事</h3>
+
+  <p>
+    大模型看不懂图像，它只认识数字序列。所以图像要先被切成小块（patch），每块变成一个 <strong>token</strong>——可以理解成「一个字」。一帧普通分辨率的画面，通常会被切成 196 个 token 左右。
+  </p>
+
+  <p>
+    现在算一笔账。假设机器人每秒走 2 步，走 5 分钟：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>项目</th><th class="num">数量</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>步数</td><td class="num">600</td><td>5 分钟 × 2 步/秒</td></tr>
+        <tr><td>每步画面 token</td><td class="num">196</td><td>一帧图像的 patch 数</td></tr>
+        <tr><td>累计视觉 token</td><td class="num">≈ 117,600</td><td>600 × 196</td></tr>
+        <tr><td>对应显存（KV 缓存）</td><td class="num">数十 GB</td><td>论文提到 2K token 约 5 GB，且随长度线性涨</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="cap">按论文给出的量级估算：上下文越长，KV 缓存占的显存越多，而显存是硬上限。</p>
+
+  <p>
+    这就是第一个死结：<strong>你不可能把整段视频都喂给模型。</strong>
+  </p>
+
+  <h3>2.2 第二个死结：每一步都在重复劳动</h3>
+
+  <p>
+    大模型生成回答分两个阶段：先把输入的整段话「读一遍」并算好中间状态（叫 <strong>prefill，预填充</strong>），再一个字一个字往外吐（叫 <strong>decode，解码</strong>）。
+  </p>
+
+  <p>
+    早期做法是：每走一步，就把「指令 + 之前所有帧 + 之前所有动作」重新拼成一个超长输入，从头 prefill 一遍。第 10 步要读 10 帧，第 100 步要读 100 帧——<strong>越走越慢</strong>。
+  </p>
+
+  <figure>
+    <div class="frame">
+      <svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="延迟随步数变化的示意图">
+        <!-- axes -->
+        <line x1="66" y1="210" x2="650" y2="210" stroke="#cfc7b8"/>
+        <line x1="66" y1="30" x2="66" y2="210" stroke="#cfc7b8"/>
+        <text x="30" y="120" font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#7c8a83" transform="rotate(-90 30 120)" text-anchor="middle">每步耗时</text>
+        <text x="650" y="250" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#7c8a83" text-anchor="end">已走步数 →</text>
+
+        <!-- gridlines -->
+        <g stroke="#eee9df">
+          <line x1="66" y1="170" x2="650" y2="170"/><line x1="66" y1="130" x2="650" y2="130"/>
+          <line x1="66" y1="90" x2="650" y2="90"/><line x1="66" y1="50" x2="650" y2="50"/>
+        </g>
+
+        <!-- single turn: rising -->
+        <path d="M70,200 C180,196 300,184 420,156 S570,96 642,56" fill="none" stroke="#a8431f" stroke-width="2.2"/>
+        <!-- sliding window: sawtooth -->
+        <path d="M70,198 L150,196 L158,176 L240,174 L248,158 L330,157 L338,144 L420,143 L428,134 L510,133 L518,126 L600,125 L608,120"
+              fill="none" stroke="#b8862f" stroke-width="2"/>
+        <!-- full reuse: flat -->
+        <path d="M70,199 L642,190" fill="none" stroke="#1d4b3d" stroke-width="2.2" stroke-dasharray="6 4"/>
+
+        <text x="486" y="66" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#a8431f" font-weight="700">每步全量重算：线性变慢</text>
+        <text x="214" y="112" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#8a5b16" font-weight="700">滑动窗口：周期性小跳</text>
+        <text x="452" y="180" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#1d4b3d" font-weight="700">KV 复用：基本恒定</text>
+
+        <text x="70" y="228" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#a8b3ac">0</text>
+        <text x="636" y="228" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#a8b3ac">300+</text>
+      </svg>
+    </div>
+    <figcaption><b>图 3</b>　三种上下文策略的延迟趋势（示意，趋势对应论文 Fig.7）。红色那条走到后面会慢到无法实时；绿色几乎是一条水平线。</figcaption>
+  </figure>
+
+  <h3>2.3 第三个死结：只留最近几帧，就等于失忆</h3>
+
+  <p>
+    最省事的办法是「只喂最近一帧」。快是快了，但模型不知道自己是刚从客厅进来的，还是已经在这条走廊里转了两圈。它会反复走回头路，或者在岔路口犹豫不决。
+  </p>
+
+  <p>
+    论文里有个很说明问题的消融实验：把历史全扔掉（只看当前帧），R2R 上的成功率明显下降；但把历史<em>全部</em>留下，性能反而不如「留一个恰当的窗口」——因为太长的上下文会引入噪声和偏差，模型被无关的旧画面带跑。
+  </p>
+
+  <div class="note">
+    <span class="tag">关键洞察</span>
+    导航需要的记忆不是「越多越好」，而是<strong>「近的细节 + 远的梗概」</strong>。
+    这恰好是人类走路时的记忆方式：你清楚记得刚才三步脚下有没有台阶，但十分钟前路过的那个房间，你只记得「好像有张桌子」。
+  </div>
+
+  <h3>2.4 已有做法的三种妥协</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:120px">做法</th><th>怎么省</th><th>代价</th></tr></thead>
+      <tbody>
+        <tr><td><b>抽帧</b></td><td>每秒只取 1 帧，或每隔几帧取一帧</td><td>可能刚好错过「该转弯的那个路口」</td></tr>
+        <tr><td><b>压缩特征</b></td><td>把图像 token 做池化、或用 Q-Former 压成少量向量</td><td>改变了模型预训练时习惯的输入分布，精度掉得厉害</td></tr>
+        <tr><td><b>每步刷新</b></td><td>只输入当前帧，历史靠模型自己「悟」</td><td>没有真正的记忆，长任务里会绕圈</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    StreamVLN 的出发点就是：<strong>这三条路都不够好，得换一种组织记忆的方式。</strong>
+  </p>
+</section>
+<hr class="rule">
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <div class="sec-head">
+    <h2><span class="num">03 / THE IDEA</span>核心思想：给记忆修两条车道</h2>
+  </div>
+
+  <p class="lead">
+    StreamVLN 的全部创新，可以浓缩成一个类比：<strong>人走陌生大楼时，用的是两种记忆。</strong>
+  </p>
+
+  <p>
+    第一种是<strong>工作记忆</strong>。你清楚记得刚才这三五步：左手边有个消防栓，前面地砖有个坑，刚才是从一扇玻璃门进来的。这些信息非常具体、非常新鲜，但只能维持很短时间。
+  </p>
+
+  <p>
+    第二种是<strong>情景记忆</strong>。走了十分钟后，你记不清每一步踩在哪里了，但你记得「我已经穿过大厅了」「厨房在身后」「这层楼我绕了一圈」。这些信息很模糊，但跨度极长，而且足够支撑决策。
+  </p>
+
+  <p>
+    人类不会把过去十分钟的每一帧画面都重新在脑子里渲染一遍。我们做的是<em>不断把工作记忆「沉淀」成情景记忆</em>。StreamVLN 干的正是这件事，只不过用工程手段实现：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:130px">通道</th><th style="width:150px">对应机制</th><th>它负责什么</th><th style="width:110px">更新频率</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>快通道</b><br><span style="color:#7c8a83;font-size:12px">Fast-streaming</span></td>
+          <td>滑动窗口 KV 缓存</td>
+          <td>最近若干轮「看到什么 → 做了什么」，分辨率最高，用于即时反应</td>
+          <td>每一步都在变</td>
+        </tr>
+        <tr>
+          <td><b>慢通道</b><br><span style="color:#7c8a83;font-size:12px">Slow-updating</span></td>
+          <td>3D 体素 token 剪枝</td>
+          <td>更早的历史画面，去掉重复、只留空间上新信息，用于不迷路</td>
+          <td>每走完一段才更新</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <div class="frame">
+      <svg viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="StreamVLN 快慢双通道架构示意">
+        <defs>
+          <marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L8,4.5 L0,9 z" fill="#8b9a92"/>
+          </marker>
+        </defs>
+
+        <!-- input column -->
+        <text x="20" y="30" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#7c8a83" letter-spacing="1">输入</text>
+
+        <rect x="20" y="42" width="176" height="50" rx="3" fill="#f6e8e0" stroke="#dcbcac"/>
+        <text x="32" y="63" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#8d3a1b" font-weight="700">语言指令</text>
+        <text x="32" y="80" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#9b6247">"经过走廊，床边停下"</text>
+
+        <rect x="20" y="108" width="176" height="68" rx="3" fill="#e6efea" stroke="#bcd2c6"/>
+        <text x="32" y="129" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#1d4b3d" font-weight="700">慢记忆 · 8 帧</text>
+        <text x="32" y="146" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#3f6b5c">更早的画面，经 3D 体素剪枝</text>
+        <text x="32" y="162" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#3f6b5c">只保留空间上新出现的部分</text>
+
+        <rect x="20" y="192" width="176" height="68" rx="3" fill="#e4edf2" stroke="#aec5d3"/>
+        <text x="32" y="213" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#234a63" font-weight="700">快窗口 · 最近 32 步</text>
+        <text x="32" y="230" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#3f6480">逐轮的「观察 → 动作」对</text>
+        <text x="32" y="246" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#3f6480">KV 状态直接复用，不重算</text>
+
+        <!-- model -->
+        <rect x="250" y="76" width="188" height="152" rx="4" fill="#10231d"/>
+        <text x="344" y="112" text-anchor="middle" font-family="Noto Serif CJK SC,serif" font-size="15" fill="#f0e6cf" font-weight="700">Video-LLM</text>
+        <text x="344" y="132" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#9fb3a9">LLaVA-Video 7B / Qwen2-7B</text>
+        <line x1="280" y1="146" x2="408" y2="146" stroke="rgba(255,255,255,.15)"/>
+        <text x="344" y="167" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#c8d4ce">视觉 token ＋ 语言 token</text>
+        <text x="344" y="185" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#c8d4ce">→ 自回归生成动作字符</text>
+        <text x="344" y="209" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#7c8f86">一次解码出 4 步动作</text>
+
+        <!-- output -->
+        <text x="512" y="30" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#7c8a83" letter-spacing="1">输出</text>
+        <rect x="512" y="76" width="166" height="66" rx="3" fill="#fff" stroke="#cfc7b8"/>
+        <text x="524" y="98" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#4a5a53" font-weight="700">动作字符序列</text>
+        <text x="524" y="124" font-family="Noto Serif CJK SC,serif" font-size="21" fill="#a8431f" letter-spacing="4">↑ ↑ ← ↑</text>
+
+        <rect x="512" y="160" width="166" height="80" rx="3" fill="#f7f3ea" stroke="#ddd3bf"/>
+        <text x="524" y="181" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#6b5a3a" font-weight="700">解析成底层动作</text>
+        <text x="524" y="201" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#7a6a4a">↑ 前进 25 cm</text>
+        <text x="524" y="218" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#7a6a4a">← / → 转 15°　STOP 停</text>
+
+        <!-- arrows -->
+        <line x1="200" y1="142" x2="244" y2="142" stroke="#8b9a92" stroke-width="1.4" marker-end="url(#a2)"/>
+        <line x1="200" y1="226" x2="244" y2="196" stroke="#8b9a92" stroke-width="1.4" marker-end="url(#a2)"/>
+        <line x1="200" y1="67" x2="244" y2="104" stroke="#8b9a92" stroke-width="1.4" marker-end="url(#a2)"/>
+        <line x1="442" y1="120" x2="506" y2="112" stroke="#8b9a92" stroke-width="1.4" marker-end="url(#a2)"/>
+
+        <!-- bottom note -->
+        <line x1="20" y1="286" x2="678" y2="286" stroke="#e4dfd4"/>
+        <text x="20" y="308" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#7c8a83">每一轮只把「新的一帧」送进去；旧帧不再重算，靠缓存和记忆两套机制各自兜住。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 4</b>　两路上下文汇入同一个 Video-LLM。快通道保「即时」，慢通道保「长远」，模型本身不需要改结构。</figcaption>
+  </figure>
+
+  <h3>3.1 为什么这样设计是聪明的</h3>
+
+  <p>
+    注意一个细节：StreamVLN <strong>没有改模型架构</strong>。它用的还是现成的 LLaVA-Video（一个能看视频的大模型），只是改了「喂什么、怎么喂、什么时候扔」。
+  </p>
+
+  <p>
+    这点很重要。改架构意味着要重新预训练，成本极高、风险极大；而改输入组织方式，可以直接站在一个已经「看得懂画面」的模型肩膀上，只教它「怎么用记忆」。
+  </p>
+
+  <p>
+    所以整篇论文的技术贡献可以归成三句话：
+  </p>
+
+  <ul>
+    <li><strong>快</strong>：把「多轮对话」组织成流式序列，靠 KV 缓存复用，让第 100 步和第 2 步一样快。</li>
+    <li><strong>省</strong>：把历史画面按 3D 空间去重，重复看到的东西不重复存。</li>
+    <li><strong>稳</strong>：两阶段训练 + DAgger 纠错数据，让模型学会在走错之后自己拉回来。</li>
+  </ul>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <div class="sec-head">
+    <h2><span class="num">04 / FAST LANE</span>快通道：把每一步都「接」在上一步后面</h2>
+  </div>
+
+  <h3>4.1 先搞懂 KV 缓存，只要一个比喻</h3>
+
+  <p>
+    大模型每读一个 token，内部都要为它算两份「笔记」：一份叫 <strong>Key</strong>，一份叫 <strong>Value</strong>。之后每生成一个新 token，都要拿它去和前面所有 token 的 Key 比对、再把对应的 Value 加权求和。
+  </p>
+
+  <p>
+    问题来了：如果每走一步都把整段历史重新读一遍，那前面那些 token 的 Key/Value 就要<em>反复重算</em>。而它们的值其实不会变。
+  </p>
+
+  <p>
+    <strong>KV 缓存就是把这堆笔记留在桌上。</strong>下次要用，直接翻，不用重算。这就是为什么你和 ChatGPT 连续聊十轮，第十轮不会明显变慢——前九轮的计算结果一直存着。
+  </p>
+
+  <div class="note">
+    <span class="tag">一句话</span>
+    KV 缓存 = 模型读过的内容的「中间计算结果存档」。复用它可以跳过 prefill，只做 decode。
+    论文里说，这一步能省掉 <strong>99% 以上</strong>的预填充时间。
+  </div>
+
+  <h3>4.2 把导航写成一串「对话」</h3>
+
+  <p>
+    StreamVLN 最关键的一步抽象，是把导航过程写成一个不断变长的对话：
+  </p>
+
+  <blockquote>
+    <p>
+      <em>o₁</em> a₁ <em>o₂</em> a₂ <em>o₃</em> a₃ …
+    </p>
+  </blockquote>
+
+  <p>
+    其中 <em>o</em> 是观察（observation，一帧画面的 token），<em>a</em> 是动作（action，模型生成的几个字符）。第一轮输入是指令 + o₁，模型输出 a₁；第二轮接着输入 o₂，模型输出 a₂……
+  </p>
+
+  <p>
+    因为 a₁ 已经在上一轮生成完了，它的 KV 也已经在缓存里，所以第二轮<strong>只需要 prefill 新来的 o₂ 这一帧</strong>。这就是流式的本质：<em>永远只处理增量。</em>
+  </p>
+
+  <h3>4.3 窗口满了怎么办：三步走</h3>
+
+  <p>
+    缓存不能无限长，所以要有一个滑动窗口。<strong>窗口大小 W 轮</strong>，永远只保留最近 W 组「观察 + 动作」：
+  </p>
+
+  <p style="text-align:center;font-family:var(--serif);font-size:17px;margin:24px 0;">
+    W<sub>j</sub> = [ o<sub>i−N+1</sub> a<sub>i−N+1</sub> … o<sub>i</sub> a<sub>i</sub> ]
+  </p>
+
+  <p>
+    当窗口装不下新的一轮时，触发一次「交接」：
+  </p>
+
+  <ol class="steps">
+    <li>
+      <b>把最旧的一段 KV 状态卸载出去</b>
+      <span>不是删掉，而是从显存里挪走，腾出空间给新帧。</span>
+    </li>
+    <li>
+      <b>扔掉「非观察」的 token</b>
+      <span>指令提示词、模型自己生成的动作用字，这些对后续决策价值低，直接丢弃。</span>
+    </li>
+    <li>
+      <b>把这一窗里的观察 token 压缩成记忆 token</b>
+      <span>交给慢通道，压成 M₀…Mⱼ 这样几个「记忆单元」，挂到下一窗口的输入里。</span>
+    </li>
+  </ol>
+
+  <figure>
+    <div class="frame">
+      <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="滑动窗口与记忆交接">
+        <defs>
+          <marker id="a3" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+            <path d="M0,0 L7,4 L0,8 z" fill="#8b9a92"/>
+          </marker>
+        </defs>
+
+        <!-- window j -->
+        <text x="26" y="34" font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#4a5a53" font-weight="700">窗口 j</text>
+        <rect x="26" y="46" width="150" height="54" rx="2" fill="#f0eee6" stroke="#d8d2c4"/>
+        <text x="101" y="70" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#7c8a83">即将被移出</text>
+        <text x="101" y="87" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#a8b3ac">o₁ a₁ o₂ a₂</text>
+
+        <rect x="176" y="46" width="290" height="54" rx="2" fill="#e4edf2" stroke="#aec5d3"/>
+        <text x="321" y="70" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#234a63">仍然保留在缓存里（KV 直接复用）</text>
+        <text x="321" y="87" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#3f6480">o₃ a₃ o₄ a₄ o₅ a₅ o₆ a₆</text>
+
+        <rect x="466" y="46" width="80" height="54" rx="2" fill="#fff" stroke="#a8431f" stroke-dasharray="4 3"/>
+        <text x="506" y="70" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#a8431f">新来</text>
+        <text x="506" y="87" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#a8431f">o₇</text>
+
+        <!-- down arrow to memory -->
+        <path d="M101,104 L101,140" stroke="#8b9a92" stroke-width="1.3" marker-end="url(#a3)"/>
+        <text x="112" y="128" font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#7c8a83">压缩</text>
+
+        <rect x="26" y="146" width="150" height="52" rx="2" fill="#e6efea" stroke="#bcd2c6"/>
+        <text x="101" y="167" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#1d4b3d">记忆单元 Mⱼ</text>
+        <text x="101" y="184" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#3f6b5c">只留空间上新信息</text>
+
+        <!-- merge into next window -->
+        <path d="M176,172 L238,172" stroke="#8b9a92" stroke-width="1.3" stroke-dasharray="3 3" marker-end="url(#a3)"/>
+
+        <!-- window j+1 -->
+        <text x="260" y="34" font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#4a5a53" font-weight="700">窗口 j+1</text>
+        <rect x="260" y="146" width="286" height="52" rx="2" fill="#f2f6f4" stroke="#c9d9d1" stroke-dasharray="5 4"/>
+        <text x="403" y="167" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#3f6b5c">Mⱼ 挂在最前面，作为「你去过这些地方」</text>
+        <text x="403" y="184" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#7c8a83">＋ 后续窗口的 o a 对</text>
+
+        <!-- time axis -->
+        <line x1="26" y1="240" x2="676" y2="240" stroke="#cfc7b8"/>
+        <text x="26" y="262" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#7c8a83">时间 →</text>
+        <g font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#a8b3ac">
+          <text x="120" y="262">越走越远</text>
+          <text x="470" y="262">当前</text>
+        </g>
+        <text x="26" y="288" font-family="Noto Sans CJK SC,sans-serif" font-size="10.5" fill="#7c8a83">每一次交接，上下文长度都回到固定值：窗口 W 轮 + 记忆 M 个单元。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 5</b>　滑动窗口的「交接」：旧的观察不删除，而是被压成更小的记忆单元，跟着窗口往前走。</figcaption>
+  </figure>
+
+  <p>
+    这一套下来，上下文规模被<strong>钉死</strong>在一个常数上：不管走 10 步还是 1000 步，模型看到的量都差不多。延迟稳定，显存也可控。
+  </p>
+
+  <h3>4.4 论文没写、但代码里能看到的真实参数</h3>
+
+  <p>
+    论文正文对窗口大小给的是符号 <em>N</em>，消融里提到 8。我去看了官方开源实现，几个具体数字值得记下来，因为它们解释了「实际跑起来是什么感觉」：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:180px">参数（代码中的名字）</th><th class="num" style="width:80px">默认值</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>num_frames</code></td><td class="num">32</td><td>一个「片段」的长度。每走 32 步，KV 上下文整体重建一次</td></tr>
+        <tr><td><code>num_history</code></td><td class="num">8</td><td>记忆里保留的历史帧数（从走过的轨迹里均匀抽 8 帧）</td></tr>
+        <tr><td><code>num_future_steps</code></td><td class="num">4</td><td>一次推理输出 4 个动作，而不是 1 个</td></tr>
+        <tr><td>动作粒度</td><td class="num">25 cm / 15°</td><td>前进 25 厘米，左转或右转 15 度，或 STOP</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="cap">来源：<code>streamvln/streamvln_agent.py</code> 的默认参数与 prompt 定义。</p>
+
+  <p>
+    这里有个容易被忽略的工程细节：<strong>不是每一步都跑模型</strong>。代码里每 4 步才真正调用一次 <code>generate()</code>，中间三步直接消费上一次吐出的动作序列。这相当于「一次想好四小步」，既省算力，又让动作更连贯——不会出现「前进、前进、突然左转」这种抖动。
+  </p>
+
+  <div class="note warn">
+    <span class="tag">读论文 vs 读代码</span>
+    论文讲的是「无限长的流、有界的上下文」；开源实现里，这个「无限」被切成了 32 步一段，段与段之间靠 8 帧记忆衔接，段末会重置一次上下文。
+    这不是矛盾，而是把理论上的滑动窗口落成了一个可复现的工程近似。<strong>写论文看机制，跑代码看参数。</strong>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <div class="sec-head">
+    <h2><span class="num">05 / SLOW LANE</span>慢通道：把「看过的地方」去重</h2>
+  </div>
+
+  <h3>5.1 一个反直觉的事实：视频里大部分画面是重复的</h3>
+
+  <p>
+    机器人往前走了五步，摄像头拍到的五帧画面，其实七八成是同一面墙、同一块地板，只是<em>变大了、偏移了一点</em>。如果每一帧都原样存 196 个 token，相当于把同一面墙存了五遍。
+  </p>
+
+  <p>
+    这跟人看视频不一样。人不会记住五张几乎一样的照片，人会记住「那面墙上有一幅画」。也就是说，<strong>冗余发生在三维空间里，而不是在时间轴上。</strong>
+  </p>
+
+  <p>
+    这句话是理解第 5 节的钥匙。已有的压缩方法（抽帧、池化）都在时间轴或特征维度上做文章，而 StreamVLN 选择在<strong>三维空间</strong>里做去重。
+  </p>
+
+  <h3>5.2 体素：把空间切成乐高格子</h3>
+
+  <p>
+    <strong>体素（voxel）就是三维的像素。</strong>想象把整个房间放进一个巨大的乐高底板，用固定大小的透明小方块把空间填满，每个小方块就是一个体素。
+  </p>
+
+  <p>
+    有了体素，判断「这两个画面是不是在拍同一个东西」就变得非常简单：只要它们对应的图像小块落在<strong>同一个体素</strong>里，就认为是同一个物体。
+  </p>
+
+  <p>
+    怎么知道落在哪？靠两样东西：<strong>深度图</strong>（知道这个像素离我多远）和<strong>相机位姿</strong>（知道我站在哪、朝哪看）。有了它们，就能把每个图像小块「反投影」回三维空间，找到它属于哪个格子。
+  </p>
+
+  <figure>
+    <div class="frame">
+      <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="3D 体素剪枝示意">
+        <defs>
+          <marker id="a6" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+            <path d="M0,0 L7,4 L0,8 z" fill="#a8431f"/>
+          </marker>
+        </defs>
+
+        <text x="150" y="32" font-family="Noto Serif CJK SC,serif" font-size="14" fill="#17211d" font-weight="700">同一格里的多个画面，只留最新的一份</text>
+        <text x="650" y="32" text-anchor="end" font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#a8b3ac">同一高度层的俯视示意</text>
+
+        <!-- room -->
+        <rect x="150" y="50" width="500" height="200" fill="#f8f5ed" stroke="#ddd6c6"/>
+
+        <!-- grid -->
+        <g stroke="#e3ddcd" stroke-width="1">
+          <path d="M172,72 V248 M194,72 V248 M216,72 V248 M238,72 V248 M260,72 V248 M282,72 V248 M304,72 V248 M326,72 V248 M348,72 V248 M370,72 V248 M392,72 V248 M414,72 V248 M436,72 V248 M458,72 V248 M480,72 V248 M502,72 V248 M524,72 V248 M546,72 V248 M568,72 V248 M590,72 V248 M612,72 V248 M634,72 V248"/>
+          <path d="M172,72 H640 M172,94 H640 M172,116 H640 M172,138 H640 M172,160 H640 M172,182 H640 M172,204 H640 M172,226 H640 M172,248 H640"/>
+        </g>
+
+        <!-- highlight voxel -->
+        <rect x="502" y="116" width="22" height="22" fill="#f6e8e0" stroke="#c9866a" stroke-width="1.8"/>
+        <rect x="502" y="116" width="22" height="22" fill="none" stroke="#a8431f" stroke-width="1"/>
+
+        <!-- FOV A -->
+        <path d="M232,228 L402,114 A205,205 0 0,1 436,207 Z" fill="#1d4b3d" opacity=".08"/>
+        <path d="M232,228 L402,114 M232,228 L436,207" stroke="#1d4b3d" stroke-width=".8" opacity=".35"/>
+        <!-- FOV B -->
+        <path d="M312,172 L473,91 A180,180 0 0,1 492,176 Z" fill="#2b5570" opacity=".09"/>
+        <path d="M312,172 L473,91 M312,172 L492,176" stroke="#2b5570" stroke-width=".8" opacity=".35"/>
+
+        <!-- sight lines -->
+        <line x1="232" y1="228" x2="500" y2="128" stroke="#a8431f" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#a6)"/>
+        <line x1="312" y1="172" x2="500" y2="128" stroke="#a8431f" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#a6)"/>
+
+        <!-- cameras -->
+        <g>
+          <circle cx="232" cy="228" r="7" fill="#1d4b3d"/>
+          <circle cx="232" cy="228" r="3" fill="#cfe3d8"/>
+          <text x="232" y="248" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#1d4b3d" font-weight="700">t = 1</text>
+        </g>
+        <g>
+          <circle cx="312" cy="172" r="7" fill="#2b5570"/>
+          <circle cx="312" cy="172" r="3" fill="#d5e4ec"/>
+          <text x="312" y="192" text-anchor="middle" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#2b5570" font-weight="700">t = 2</text>
+        </g>
+
+        <!-- callout -->
+        <path d="M540,110 L528,124" stroke="#a8431f" stroke-width="1"/>
+        <rect x="540" y="72" width="104" height="38" fill="#fff" stroke="#e0d8c8"/>
+        <text x="548" y="87" font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#a8431f" font-weight="700">这一个格子</text>
+        <text x="548" y="101" font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#7c8a83">= 一个体素</text>
+
+        <text x="150" y="278" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#7c8a83">两台相机在不同时刻拍到的其实是同一块墙面。3D 空间里它们在同一个格子，所以只保留最新的那次观察。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 6</b>　体素去重的直觉。画面在 2D 上差别很大，但落到 3D 空间里，很多 token 指向的是同一处表面。</figcaption>
+  </figure>
+
+  <h3>5.3 算法其实只有四步</h3>
+
+  <p>
+    论文里的 Algorithm 1 看着公式多，拆开就是四句人话：
+  </p>
+
+  <ol class="steps">
+    <li>
+      <b>给每个图像小块算一个「门牌号」</b>
+      <span>用深度和相机位姿，把第 t 帧第 (x, y) 个小块反投影到 3D，落到哪个体素，门牌号就是几。没有深度的（比如天空）记 −1，直接跳过。</span>
+    </li>
+    <li>
+      <b>同一段时间里，同一个格子只留最新的</b>
+      <span>把时间切成若干段，每段长度 K。段内同一个体素被多次看到，只保留最后那一次——因为最新的视角通常最完整、最清楚。</span>
+    </li>
+    <li>
+      <b>整帧太「空」就整帧扔掉</b>
+      <span>如果一帧里保留下来的 token 比例低于阈值 θ，说明这帧的画面基本都跟别人重复了，干脆整帧不要。论文没公开 θ 的具体取值。</span>
+    </li>
+    <li>
+      <b>把保留下来的 token 拼成记忆</b>
+      <span>这些 token 的向量原封不动，只是数量少了。它们被打包成记忆单元，挂到快窗口前面。</span>
+    </li>
+  </ol>
+
+  <h3>5.4 为什么「挑 token」比「改 token」高明</h3>
+
+  <p>
+    这是整篇论文里我最欣赏的一个取舍。
+  </p>
+
+  <p>
+    常见的压缩方法是<strong>改</strong>：把 196 个 token 做平均池化变成 49 个，或者用一个小网络把它们重新编码成 8 个向量。问题是，大模型是在「196 个原始图像 token」这种分布上预训练出来的，你突然喂给它一批被改造过的向量，它没见过，理解能力就崩了。
+  </p>
+
+  <p>
+    StreamVLN 的做法是<strong>挑</strong>：我不改任何一个 token 的样子，我只是<em>不给你那些重复的</em>。模型收到的仍然是原汁原味的图像特征，只是数量少了。
+  </p>
+
+  <div class="note">
+    <span class="tag">效果</span>
+    论文的消融显示：只对 8 帧记忆做剪枝，R2R 上记忆 token 数量<strong>减少 28%</strong>，RxR 减少 <strong>22%</strong>，而成功率基本不掉，R2R 甚至略有上升。
+    如果把流式帧的 KV 也一起剪（Prune-All），token 能再降 30% 左右，但性能会掉一点点——所以官方默认只剪记忆。
+  </div>
+
+  <h3>5.5 一个必须说明的落差</h3>
+
+  <p>
+    开源代码里有一行注释很诚实：
+  </p>
+
+  <blockquote>
+    <p>Currently the model does not use voxel pooling. So we only use the rgb.</p>
+  </blockquote>
+
+  <p>
+    意思是：<strong>公开的推理代码并没有启用体素池化</strong>，历史帧是靠「从走过的轨迹里均匀抽 8 帧」来近似的。深度和位姿的输入通道还留着，但实际没参与剪枝。
+  </p>
+
+  <p>
+    这带来两个现实影响。第一，你在自己机器上跑，拿到的不是一个「带 3D 去重」的完整系统，而是一个「8 帧均匀采样」的版本，效果会比论文里略打折。第二，如果你想复现论文的剪枝收益，需要自己在数据预处理阶段把体素索引算好——这也是为什么论文强调这套方法依赖深度和相机位姿。
+  </p>
+
+  <div class="note warn">
+    <span class="tag">给小白的一句话</span>
+    论文的「慢记忆」有两个层次：<em>机制层</em>是「压缩历史视觉状态」，<em>实现层</em>是「3D 体素去重」。
+    前者是必须的，后者是当前最优解；开源版用的是更简单的均匀采样，属于工程上的降级。
+  </div>
+</section>
+<hr class="rule">
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <div class="sec-head">
+    <h2><span class="num">06 / ACTION</span>它到底怎么「迈出一步」</h2>
+  </div>
+
+  <h3>6.1 动作空间：只有四个选项</h3>
+
+  <p>
+    连续环境里，机器人不能「跳」，只能一小步一小步挪。StreamVLN 用的动作集非常朴素，就四个：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:110px">字符</th><th style="width:150px">动作</th><th>物理含义</th></tr></thead>
+      <tbody>
+        <tr><td style="font-size:20px;color:#a8431f">↑</td><td>MOVE FORWARD</td><td>沿当前朝向前进 25 厘米</td></tr>
+        <tr><td style="font-size:20px;color:#a8431f">←</td><td>TURN LEFT</td><td>原地左转 15 度</td></tr>
+        <tr><td style="font-size:20px;color:#a8431f">→</td><td>TURN RIGHT</td><td>原地右转 15 度</td></tr>
+        <tr><td style="font-size:16px;color:#a8431f">STOP</td><td>STOP</td><td>停在原地，表示任务结束</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    25 厘米和 15 度这两个数字不是随便定的，它们来自 VLN-CE 的标准设定。走完一条 10 米的指令路线，大概需要 40 次前进加上若干次转向——所以一次任务里模型要决策上百次。
+  </p>
+
+  <h3>6.2 一个特别的设计：动作是「写」出来的，不是「分类」出来的</h3>
+
+  <p>
+    传统导航模型会在最后一层接一个分类头，输出「四个动作各自的概率」，选最大的那个。StreamVLN 不这么干，它让大模型<strong>直接把动作当成文字写出来</strong>：
+  </p>
+
+  <blockquote class="seq">
+    <p>↑ ↑ ← ↑</p>
+  </blockquote>
+
+  <p>
+    然后外面用正则表达式把这串符号解析成动作序号，交给机器人执行。为什么要绕这一圈？三个好处：
+  </p>
+
+  <ul>
+    <li><strong>不用改模型结构</strong>。任何语言模型都会「接着说」，天生就能输出这串符号，不需要额外训练一个分类头。</li>
+    <li><strong>一次能输出一串</strong>。分类头一次只能给一个动作；文本可以一直写，写到模型觉得够了为止。</li>
+    <li><strong>保留了模型的推理能力</strong>。同一个模型既能输出动作，也能回答「你右边墙上是什么」——论文里专门测了它在 ScanQA 上的视觉问答成绩，没有被导航训练「练傻」。</li>
+  </ul>
+
+  <p>
+    代价是：模型可能写出格式不对的东西（比如多说了一句解释），所以代码里有个兜底——解析不出动作，就当 STOP 处理。
+  </p>
+
+  <h3>6.3 一次想四步，是个很实用的 trick</h3>
+
+  <p>
+    代码默认 <code>num_future_steps = 4</code>：模型一次生成 4 个动作，然后机器人连着执行 4 步，执行完再问模型「现在该怎么办」。
+  </p>
+
+  <p>
+    这叫 <strong>动作分块</strong>（action chunking）。它的好处不只是省算力（推理次数直接降到四分之一），更重要的是<strong>动作更连贯</strong>。如果每 25 厘米就问一次模型，模型每次都可能因为画面的一点抖动而改变主意，走起来就会「一顿一顿」；一次想四步，天然带一点惯性。
+  </p>
+
+  <h3>6.4 把一轮完整流程走一遍</h3>
+
+  <p>
+    下面这张表，是一次真实推理中从第 0 步到第 32 步发生的事。看懂它，你就理解了快慢两条通道是怎么配合的：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:88px">步数</th><th>发生了什么</th><th style="width:120px">模型调用</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>t = 0</td><td>把指令 + 第一帧画面送进模型，生成 4 个动作（如 ↑↑←↑）</td><td>调用一次</td></tr>
+        <tr><td>t = 1–3</td><td>直接执行剩下 3 个动作，画面照常采集但不算</td><td>不调用</td></tr>
+        <tr><td>t = 4</td><td>新帧进来，复用前面的 KV 缓存，只 prefill 这一帧，再生成 4 个动作</td><td>调用一次</td></tr>
+        <tr><td>t = 8, 12 … 28</td><td>同上，缓存一直往后接，上下文越来越长但仍在窗口内</td><td>每 4 步一次</td></tr>
+        <tr class="hl"><td>t = 32</td><td>窗口满了。从过去 32 步里均匀抽 8 帧当「记忆」，和当前帧一起重新送进模型，然后清空上下文，重新开始</td><td>重建一次</td></tr>
+        <tr><td>t = 33 …</td><td>重复上面的循环，但这次模型开头多了一段「你去过这些地方」的记忆</td><td>每 4 步一次</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="cap">对应代码：<code>streamvln_agent.py</code> 中 <code>step()</code> 的 <code>run_model</code> 分支与 <code>reset_for_env</code> 调用。</p>
+
+  <p>
+    所以「32 步」和「8 帧」是两个不同尺度：<strong>32 是快窗口的长度</strong>（保证段内不算重复），<strong>8 是慢记忆的容量</strong>（保证跨段不失忆）。每 32 步，快窗口清零，但慢记忆把「这 32 步走到过哪」浓缩成 8 张图带进下一段。
+  </p>
+
+  <div class="note">
+    <span class="tag">为什么是 8 帧而不是 32 帧</span>
+    论文的消融给了答案：把记忆从 2 帧加到 8 帧，成功率从 37.3 涨到 45.5；但继续加、或者干脆用全部历史，反而掉到 40.0。
+    记忆不是越多越好，<strong>8 帧左右是一个「够用且不干扰」的甜点</strong>。
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <div class="sec-head">
+    <h2><span class="num">07 / TRAINING</span>这样一个模型，是怎么教出来的</h2>
+  </div>
+
+  <h3>7.1 起点：一个已经会看视频的模型</h3>
+
+  <p>
+    StreamVLN 没有从零训练。它的底座是 <strong>LLaVA-Video</strong>——一个把「视觉编码器」和「Qwen2-7B 语言模型」拼起来的多模态模型，已经见过大量视频和图文对，具备基本的时空理解能力。
+  </p>
+
+  <p>
+    研究团队做的事情，是把这个「会看视频、会聊天」的模型，改造成一个「会走路」的模型。改造方式是：<em>把动作也当成语言</em>，用导航数据继续训练它。
+  </p>
+
+  <h3>7.2 两阶段训练：先学会走，再学会不走偏</h3>
+
+  <p>
+    训练分两步，逻辑很像学车：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:96px">阶段</th><th style="width:220px">喂什么数据</th><th>目的</th></tr></thead>
+      <tbody>
+        <tr><td><b>阶段一</b></td><td>纯专家轨迹（oracle）</td><td>告诉模型「标准答案长什么样」。1 个 epoch</td></tr>
+        <tr><td><b>阶段二</b></td><td>专家轨迹 + DAgger 纠错 + 通用多模态数据</td><td>告诉模型「走错了怎么救回来」，同时别忘了看图的通用本领。1 个 epoch</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.3 数据配方：四种料，各管一件事</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:150px">数据</th><th class="num" style="width:88px">规模</th><th>它教模型什么</th></tr></thead>
+      <tbody>
+        <tr><td>导航专家轨迹<br><span style="color:#7c8a83;font-size:12px">R2R / EnvDrop / RxR / ScaleVLN</span></td><td class="num">450K</td><td>基本的「跟着指令走」能力</td></tr>
+        <tr><td>DAgger 纠错</td><td class="num">240K</td><td>走歪、卡住、撞墙之后怎么恢复</td></tr>
+        <tr><td>视频问答<br><span style="color:#7c8a83;font-size:12px">LLaVA-Video-178K / ScanQA</span></td><td class="num">248K</td><td>时空推理、三维场景理解</td></tr>
+        <tr><td>交错图文<br><span style="color:#7c8a83;font-size:12px">MMC4</span></td><td class="num">230K</td><td>多轮对话的语感，防止语言能力退化</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="cap">总计约 117 万条训练样本。其中 ScaleVLN 子集是把离散环境的数据转成连续格式得来的，属于「额外导航数据」。</p>
+
+  <h3>7.4 DAgger 是什么，为什么它值 240K 条数据</h3>
+
+  <p>
+    假设你只给模型看「完美司机的行车记录」。它学得很像，但一旦自己开的时候稍微偏了一点，它就从没见过这种局面——因为训练数据里从来没有「车身歪了 10 度」的画面。这叫<strong>分布偏移</strong>。
+  </p>
+
+  <p>
+    <strong>DAgger</strong>（Dataset Aggregation）的思路很直白：让学员自己开，教练坐旁边。学员开歪了，教练说「这时候应该往左打一点」，把这个「歪掉的状态 + 正确动作」记下来，加进训练集。反复几轮，模型就见过各种自己可能犯的错。
+  </p>
+
+  <p>
+    效果有多明显？消融实验里，去掉 DAgger 数据，R2R 的成功率直接掉 <strong>5.5 个点</strong>，SPL 掉 3.8 个点。这是所有单项里影响最大的之一。
+  </p>
+
+  <h3>7.5 训练成本</h3>
+
+  <dl class="kv">
+    <dt>算力</dt><dd>约 1500 A100 GPU·小时（差不多是一张 A100 跑两个月，或 16 张跑四天）</dd>
+    <dt>学习率</dt><dd>语言模型 2e-5，视觉编码器 5e-6（视觉部分动得更轻，避免破坏已有能力）</dd>
+    <dt>批大小</dt><dd>每步 128 个视频片段</dd>
+    <dt>精度</dt><dd>bf16，FlashAttention-2</dd>
+    <dt>推理显存</dt><dd>7B 模型 + KV 缓存，单张 24 GB 显卡可以跑，但长上下文会吃紧</dd>
+  </dl>
+
+  <div class="note">
+    <span class="tag">值得注意</span>
+    第二阶段混入通用数据不是「锦上添花」。论文的消融显示，加入视频问答和图文数据后，R2R 成功率从 45.6 涨到 52.8（+7.2），
+    而模型在 ScanQA 上的问答成绩还略高于同期的 NaVILA。<strong>导航能力和通用理解能力可以互相喂养，而不是此消彼长。</strong>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <div class="sec-head">
+    <h2><span class="num">08 / RESULTS</span>成绩单：这些数字到底说明什么</h2>
+  </div>
+
+  <h3>8.1 五个指标，用打车来理解</h3>
+
+  <p>
+    假设你让司机送你到某个餐厅：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:78px">指标</th><th style="width:170px">对应打车场景</th><th>怎么算</th></tr></thead>
+      <tbody>
+        <tr><td><b>NE</b></td><td>最后停的位置离餐厅门口几米</td><td>终点到目标的最短路径距离，单位米</td></tr>
+        <tr><td><b>OS</b></td><td>路上有没有经过餐厅门口（但没停）</td><td>轨迹上离目标最近的点 ≤ 3 米就算成功</td></tr>
+        <tr><td><b>SR</b></td><td>最终有没有停在餐厅门口</td><td>终点 ≤ 3 米算成功，看比例</td></tr>
+        <tr><td><b>SPL</b></td><td>到了，而且没绕路</td><td>SR 乘以「最短路 / 实际路」，绕路会打折</td></tr>
+        <tr><td><b>nDTW</b></td><td>整条路线和导航推荐的像不像</td><td>轨迹相似度，0 到 1</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>SR 和 SPL 永远一起看。</strong>一个 SR 很高但 SPL 很低的模型，说明它总能到，但是靠乱撞撞到的；一个 SPL 接近 SR 的模型，才是真的「知道路怎么走」。
+  </p>
+
+  <h3>8.2 主结果</h3>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2" style="vertical-align:bottom">方法</th>
+          <th colspan="4" style="text-align:center;border-left:1px solid #e4dfd4">R2R-CE（Val-Unseen）</th>
+          <th colspan="4" style="text-align:center;border-left:1px solid #e4dfd4">RxR-CE（Val-Unseen）</th>
+        </tr>
+        <tr>
+          <th class="num" style="border-left:1px solid #e4dfd4">NE↓</th><th class="num">OS↑</th><th class="num">SR↑</th><th class="num">SPL↑</th>
+          <th class="num" style="border-left:1px solid #e4dfd4">NE↓</th><th class="num">SR↑</th><th class="num">SPL↑</th><th class="num">nDTW↑</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="hl">
+          <td><b>StreamVLN</b><br><span style="font-weight:400;color:#7c8a83;font-size:12px">仅 RGB</span></td>
+          <td class="num">5.43</td><td class="num">62.5</td><td class="num">52.8</td><td class="num">47.2</td>
+          <td class="num">6.72</td><td class="num">48.6</td><td class="num">42.5</td><td class="num">60.2</td>
+        </tr>
+        <tr class="hl">
+          <td><b>StreamVLN†</b><br><span style="font-weight:400;color:#7c8a83;font-size:12px">+ 额外导航数据</span></td>
+          <td class="num">4.90</td><td class="num">63.6</td><td class="num">56.4</td><td class="num">50.2</td>
+          <td class="num">5.65</td><td class="num">54.4</td><td class="num">45.4</td><td class="num">63.7</td>
+        </tr>
+        <tr>
+          <td>NaVILA†</td>
+          <td class="num">5.22</td><td class="num">62.5</td><td class="num">54.0</td><td class="num">49.0</td>
+          <td class="num">6.77</td><td class="num">49.3</td><td class="num">44.0</td><td class="num">58.8</td>
+        </tr>
+        <tr>
+          <td>UniNaVid†</td>
+          <td class="num">5.58</td><td class="num">53.3</td><td class="num">47.0</td><td class="num">42.7</td>
+          <td class="num">6.24</td><td class="num">48.7</td><td class="num">40.9</td><td class="num">—</td>
+        </tr>
+        <tr>
+          <td>ETPNav<br><span style="color:#7c8a83;font-size:12px">用深度 + 里程计</span></td>
+          <td class="num">4.71</td><td class="num">65.0</td><td class="num">57.0</td><td class="num">49.0</td>
+          <td class="num">5.64</td><td class="num">54.7</td><td class="num">44.8</td><td class="num">61.9</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="cap">数据来自论文 v2 的 Table I 与官方 README（2025-09 更新后的 checkpoint）。† 表示训练时用了额外的导航数据集。</p>
+
+  <p>
+    怎么读这张表？有三个层次：
+  </p>
+
+  <p>
+    <strong>第一，和同类比。</strong>在「只吃 RGB 画面、用视频大模型」这一类里，StreamVLN† 的 SR 56.4 / SPL 50.2 是最高的，比 NaVILA 高 2.4 个点，比 UniNaVid 高 9.4 个点。
+  </p>
+
+  <p>
+    <strong>第二，和「作弊型」比。</strong>ETPNav 的 SR 是 57.0，比 StreamVLN 还高一点——但它额外用了深度图和里程计，相当于既看画面又拿卷尺量距离。StreamVLN 只有一颗普通摄像头。<strong>论文的措辞很谨慎：RGB-only 里的 SOTA，不是所有方法里的 SOTA。</strong>
+  </p>
+
+  <p>
+    <strong>第三，看它自己的进步。</strong>不加额外数据时 SR 52.8，加了 ScaleVLN 数据后到 56.4，涨了 3.6 个点。这说明模型还有「吃数据」的空间，不是已经饱和。
+  </p>
+
+  <figure>
+    <div class="frame">
+      <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="R2R 成功率对比条形图">
+        <text x="16" y="24" font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#7c8a83">R2R-CE Val-Unseen　成功率 SR（%）</text>
+        <g font-family="Noto Sans CJK SC,sans-serif" font-size="11" fill="#4a5a53">
+          <text x="16" y="66">StreamVLN†</text>
+          <text x="16" y="104">StreamVLN</text>
+          <text x="16" y="142">NaVILA†</text>
+          <text x="16" y="180">UniNaVid†</text>
+        </g>
+        <!-- bars: scale 0-60 -> 0-420px starting x=150 -->
+        <g>
+          <rect x="150" y="50" width="395" height="22" fill="#a8431f"/>
+          <text x="556" y="66" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#a8431f" font-weight="700">56.4</text>
+
+          <rect x="150" y="88" width="370" height="22" fill="#c9795a"/>
+          <text x="531" y="104" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#a8431f">52.8</text>
+
+          <rect x="150" y="126" width="378" height="22" fill="#8fa6b4"/>
+          <text x="539" y="142" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#3f6480">54.0</text>
+
+          <rect x="150" y="164" width="329" height="22" fill="#a9b8c2"/>
+          <text x="490" y="180" font-family="Noto Sans CJK SC,sans-serif" font-size="11.5" fill="#3f6480">47.0</text>
+        </g>
+        <line x1="150" y1="40" x2="150" y2="200" stroke="#cfc7b8"/>
+        <g font-family="Noto Sans CJK SC,sans-serif" font-size="9.5" fill="#a8b3ac">
+          <text x="150" y="216" text-anchor="middle">0</text>
+          <text x="290" y="216" text-anchor="middle">20</text>
+          <text x="430" y="216" text-anchor="middle">40</text>
+          <text x="570" y="216" text-anchor="middle">60</text>
+        </g>
+        <text x="16" y="240" font-family="Noto Sans CJK SC,sans-serif" font-size="10" fill="#7c8a83">同一个测试集，都是「没见过的新房子」。</text>
+      </svg>
+    </div>
+    <figcaption><b>图 7</b>　R2R 成功率对比。注意深色两根是同一个模型：差异只在于训练时有没有见过 ScaleVLN 那批额外数据。</figcaption>
+  </figure>
+
+  <h3>8.3 消融实验：每个零件到底贡献多少</h3>
+
+  <p>
+    「消融」就是拆零件——把某个设计拿掉，看性能掉多少。这是判断一篇论文「哪里是真创新」最有效的方式。StreamVLN 的消融结果相当干净：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:240px">去掉或改变什么</th><th style="width:170px">R2R 成功率变化</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>去掉 DAgger 纠错数据</td><td style="color:#a8431f"><b>−5.5 SR</b></td><td>影响最大。说明「会救错」比「会走对」更难学</td></tr>
+        <tr><td>去掉通用多模态数据（VQA + MMC4）</td><td>−5.2 SR</td><td>通用时空理解能力对导航有直接帮助</td></tr>
+        <tr><td>记忆从 8 帧减到 2 帧</td><td>−8.2 SR</td><td>记忆太短，走长路线会迷路</td></tr>
+        <tr><td>用全部历史代替 8 帧</td><td>−5.5 SR</td><td>记忆太长反而引入干扰，印证「少即是多」</td></tr>
+        <tr><td>窗口从 8 轮减到 4 轮</td><td>下降</td><td>训练样本变多但类别失衡，性价比反而低</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="cap">概括自论文 Table III 与 Table IV。方向可靠，具体数值为近似。</p>
+
+  <h3>8.4 延迟：能不能真的上机器人</h3>
+
+  <p>
+    这是 StreamVLN 相比「纯刷榜」的论文最实在的地方——它敢报延迟。真机实验用的是宇树 Go2 机器狗，模型跑在一台带 RTX 4090 的远程服务器上，通过无线传输画面：
+  </p>
+
+  <dl class="kv">
+    <dt>模型推理</dt><dd>0.27 秒 / 4 个动作（平均每个动作约 67 毫秒）</dd>
+    <dt>通信延迟</dt><dd>室内约 0.2 秒，室外约 1.0 秒</dd>
+    <dt>整体节奏</dt><dd>室内接近每秒 4 步，走起来是连续、不卡顿的</dd>
+  </dl>
+
+  <p>
+    0.27 秒这个数字放在导航任务里意味着什么？人正常走路是每秒 1.4 米，机器人一步 25 厘米、4 步 1 米——也就是说，它「想 0.27 秒、走 1 秒」，脑子和腿是匹配的。
+  </p>
+
+  <h3>8.5 一个必须说清的数字问题</h3>
+
+  <p>
+    你如果去查资料，会看到两个不同的 R2R 成功率：<strong>56.9%</strong> 和 <strong>56.4%</strong>。这不是笔误，也不是造假，而是两个版本：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:160px">版本</th><th>R2R SR / SPL</th><th>RxR SR / SPL</th></tr></thead>
+      <tbody>
+        <tr><td>论文 v1（2025-07）与项目主页</td><td>56.9 / 51.9</td><td>52.9 / 46.0</td></tr>
+        <tr><td>v2 表格 + 2025-09 更新权重</td><td>56.4 / 50.2</td><td>54.4 / 45.4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    2025 年 9 月团队换了训练数据（从 R2R_VLNCE_v1 换成 v1-3）并重新训练，R2R 略降，RxR 明显提升。引用时最好注明用的是哪一版，别两个数字混着用。
+  </p>
+</section>
+<hr class="rule">
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <div class="sec-head">
+    <h2><span class="num">09 / CONTEXT</span>它在整个领域里站在哪</h2>
+  </div>
+
+  <p class="lead">
+    要判断一个工作有没有意思，得看它前面的人卡在哪。
+  </p>
+
+  <p>
+    VLN 这个方向从 2018 年开始，大致走过了三代：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:120px">阶段</th><th style="width:170px">代表做法</th><th>核心思路</th><th style="width:120px">卡在哪</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>第一代</b><br><span style="color:#7c8a83;font-size:12px">2018–2022</span></td>
+          <td>Seq2Seq、HAMT、ScaleVLN</td>
+          <td>专门为导航设计网络：视觉编码 + 语言编码 + 历史记忆模块</td>
+          <td>每个任务都要重训，泛化差</td>
+        </tr>
+        <tr>
+          <td><b>第二代</b><br><span style="color:#7c8a83;font-size:12px">2023–2024</span></td>
+          <td>NavGPT、MapGPT</td>
+          <td>把大模型当「大脑」，用文字描述场景，再让它规划</td>
+          <td>要把画面转成文字，信息损失大，延迟高</td>
+        </tr>
+        <tr>
+          <td><b>第三代</b><br><span style="color:#7c8a83;font-size:12px">2024–2025</span></td>
+          <td>NaVid、NaVILA、MapNav、<b>StreamVLN</b></td>
+          <td>直接让视频大模型「看画面 → 出动作」，端到端</td>
+          <td>上下文怎么管、延迟怎么压</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    StreamVLN 属于第三代。它和几个最直接的同类相比，差别主要在「记忆怎么存」这一件事上：
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:110px">方法</th><th style="width:190px">记忆形式</th><th>优点</th><th style="width:150px">短板</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>NaVid</b></td>
+          <td>只看当前帧 + 极短历史</td>
+          <td>简单、快</td>
+          <td>长任务容易绕圈</td>
+        </tr>
+        <tr>
+          <td><b>NaVILA</b></td>
+          <td>高层出「走几米/转几度」，低层用强化学习执行</td>
+          <td>动作平滑，真机表现好</td>
+          <td>两层系统，调参复杂</td>
+        </tr>
+        <tr>
+          <td><b>MapNav</b></td>
+          <td>把历史画成一张带标注的语义地图</td>
+          <td>空间结构清晰，可解释</td>
+          <td>建图本身有误差，地图与画面对不齐</td>
+        </tr>
+        <tr class="hl">
+          <td><b>StreamVLN</b></td>
+          <td>流式对话（快）+ 3D 体素压缩（慢）</td>
+          <td>不用建图、不改模型、延迟恒定</td>
+          <td>记忆仍是固定容量，复杂空间会丢细节</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    一个有意思的对比：MapNav 选择「把记忆画出来」，StreamVLN 选择「把记忆压进 token 里」。
+    前者更接近人类的「认知地图」，后者更像人类「说不清但就是认得路」的直觉记忆。目前两条路都有人走，谁更好还没有定论。
+  </p>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <div class="sec-head">
+    <h2><span class="num">10 / LIMITS</span>诚实地看它的局限</h2>
+  </div>
+
+  <p class="lead">
+    论文不会主动告诉你它哪里不行。这一节是我读完论文和代码后，认为你该带着怀疑去看的几点。
+  </p>
+
+  <h3>10.1 「8 帧记忆」装不下复杂空间</h3>
+
+  <p>
+    8 帧，即使经过体素去重，信息量也是有限的。在一栋两层楼、十几个房间的房子里走十分钟，这 8 帧能保留多少？大概率只剩下几个模糊的「地标」。
+  </p>
+
+  <p>
+    论文里那些「超长时程」的演示（办公楼大堂、商场）确实能走完，但它们大多是<strong>路径清晰的单向路线</strong>，不需要「回到三楼那个房间拿东西」这种回溯能力。真正的长程任务，记忆仍是瓶颈。
+  </p>
+
+  <h3>10.2 体素剪枝依赖深度和位姿，而这两样在真机上很贵</h3>
+
+  <p>
+    在仿真里，深度图和相机位姿是白送的（Habitat 直接给真值）。真机上呢？深度要么靠双目/RGB-D 相机（室外阳光下经常失效），要么靠单目估计（有误差）；位姿要么靠轮式里程计（会漂），要么靠视觉 SLAM（要额外算力）。
+  </p>
+
+  <p>
+    误差一旦进入体素索引，就会出现「本来不是同一个格子，被误判成同一个」，把有用的 token 删掉。论文的真机实验用的是 Go2，配了深度相机，但公开代码里体素池化并没启用——这两件事放在一起看，说明工程落地还有距离。
+  </p>
+
+  <h3>10.3 每 32 步一次「重置」</h3>
+
+  <p>
+    这是代码层面的细节，但会影响真实体验：走到第 32、64、96 步时，上下文会被整体重建。重建的那一步，模型看到的输入结构和前一步完全不同（多了 8 张记忆图，少了一整段对话）。<strong>这可能造成个别时刻的动作抖动或判断突变。</strong>
+    论文的评测指标是整条轨迹的平均值，掩盖了这种瞬时异常。
+  </p>
+
+  <h3>10.4 动作空间是写死的</h3>
+
+  <p>
+    「前进 25 厘米、转 15 度」是 VLN-CE 的标准，但真实机器人底盘千差万别。轮式、四足、人形，步长和转弯半径都不一样。换一个平台，要么改动作定义重新训，要么在外面加一层转换——后者会引入误差累积。
+  </p>
+
+  <h3>10.5 评测仍以仿真为主</h3>
+
+  <p>
+    R2R-CE 和 RxR-CE 都是在 Matterport3D 扫描数据上做的，虽然逼真，但和真实世界的光照、反光、动态行人差距很大。论文的真机实验覆盖了客厅、卧室、办公区、商场、户外步道，场景挺全，但<strong>没有给出量化的真机成功率</strong>——只有定性描述和视频演示。
+  </p>
+
+  <div class="note warn">
+    <span class="tag">一句话总结局限</span>
+    它解决的是「上下文和延迟」这个工程瓶颈，而不是「机器人真正理解空间」这个科学问题。
+    记忆被压缩到 8 帧，本质上是<strong>用一个固定预算去近似无限历史</strong>，预算之内很优雅，预算之外仍会失灵。
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 11 ============ -->
+<section id="s11">
+  <div class="sec-head">
+    <h2><span class="num">11 / HANDS-ON</span>如果你想自己上手</h2>
+  </div>
+
+  <h3>11.1 先花 30 分钟，把论文读「薄」</h3>
+
+  <p>
+    不要从头读到尾。按这个顺序，半小时能抓住 80%：
+  </p>
+
+  <ol class="steps">
+    <li><b>看项目主页的演示视频（3 分钟）</b><span>先建立「它在干什么」的直觉，比读十页公式有用。</span></li>
+    <li><b>读摘要 + 图 2（框架图）（5 分钟）</b><span>摘要告诉你问题和解法，框架图告诉你数据怎么流。看懂图 2，这篇论文就懂了一半。</span></li>
+    <li><b>读方法部分的两个小节标题（2 分钟）</b><span>Fast-Streaming Dialogue Context 和 Slow-Updating Memory Context，就是本文档第 4、5 节。</span></li>
+    <li><b>看 Table I 和 Table IV（10 分钟）</b><span>前者告诉你它多强，后者告诉你每个零件多重要。Table IV 的信息量往往比正文还大。</span></li>
+    <li><b>回头读你没懂的名词（10 分钟）</b><span>KV cache、prefill、体素、SPL——这四个词懂了，全文就通了。</span></li>
+  </ol>
+
+  <h3>11.2 跑起来的最小路径</h3>
+
+  <p>
+    官方仓库在 <a href="https://github.com/OpenRobotLab/StreamVLN" target="_blank" rel="noopener">OpenRobotLab/StreamVLN</a>，权重在 Hugging Face。整体流程是这样：
+  </p>
+
+  <div class="note">
+    <span class="tag">环境</span>
+    Python 3.9 · PyTorch 2.1.2 · CUDA 12.4 · habitat-sim 0.2.4（仿真器）· 建议 24 GB 以上显存
+  </div>
+
+  <p><strong>第一步，装仿真器。</strong>VLN-CE 的评测跑在 Habitat 里，这是 Meta 开源的室内仿真平台，装起来是整个流程里最麻烦的一步：</p>
+
+  <pre style="background:#10231d;color:#d8e0da;padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.8;border-radius:3px"><code style="background:none;color:inherit;padding:0">conda create -n streamvln python=3.9
+conda install habitat-sim==0.2.4 withbullet headless -c conda-forge -c aihabitat
+git clone --branch v0.2.4 https://github.com/facebookresearch/habitat-lab.git
+cd habitat-lab
+pip install -e habitat-lab
+pip install -e habitat-baselines</code></pre>
+
+  <p><strong>第二步，下数据。</strong>需要两类东西：3D 场景（MP3D 约 90 个房子，或 HM3D）和 VLN-CE 的回合文件（episodes）。MP3D 需要申请授权，这一步会卡住不少人。</p>
+
+  <p><strong>第三步，跑评测。</strong>仓库提供了一键脚本：</p>
+
+  <pre style="background:#10231d;color:#d8e0da;padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.8;border-radius:3px"><code style="background:none;color:inherit;padding:0">sh scripts/streamvln_eval_multi_gpu.sh</code></pre>
+
+  <p>
+    如果你想跳过仿真、只看模型怎么「看图说话」，可以直接用 Hugging Face 上的 transformers 接口加载权重，喂一张图 + 一句话，看它输出什么动作字符。这是理解「动作即文本」最直观的方式。
+  </p>
+
+  <h3>11.3 三条容易踩的坑</h3>
+
+  <ul>
+    <li><strong>数据版本要对齐。</strong>2025 年 9 月之后要用 R2R_VLNCE_v1-3，用旧版数据评测结果对不上。</li>
+    <li><strong><code>num_history</code> 必须传给模型。</strong>仓库更新日志里专门提过这个 bug：不传会默认 None，性能大幅下降。</li>
+    <li><strong>真机和仿真用不同权重。</strong>真机版去掉了指令里没提到的初始转向，还加强了避障——直接拿评测权重上机器人，会看到它开局先莫名其妙转两圈。</li>
+  </ul>
+</section>
+
+<hr class="rule">
+
+<!-- ============ 12 ============ -->
+<section id="s12">
+  <div class="sec-head">
+    <h2><span class="num">12 / GLOSSARY</span>术语表：看不懂时回来查</h2>
+  </div>
+
+  <div class="table-wrap">
+    <table class="glossary">
+      <thead><tr><th style="width:170px">术语</th><th>人话解释</th></tr></thead>
+      <tbody>
+        <tr><td><b>VLN</b></td><td>Vision-and-Language Navigation，视觉语言导航。跟着一句话在环境里找路。</td></tr>
+        <tr><td><b>VLN-CE</b></td><td>连续环境版的 VLN。机器人真的在走，输出「前进/转向」这类底层动作，而不是在节点间瞬移。</td></tr>
+        <tr><td><b>Token</b></td><td>模型处理的最小单位。文字里约等于一个字/词，图像里是一小块画面（patch）。</td></tr>
+        <tr><td><b>Patch</b></td><td>图像被切成的固定大小方块，通常 14×14 像素。一帧图能切出一百多个。</td></tr>
+        <tr><td><b>Video-LLM</b></td><td>能同时理解视频和文字的大模型。StreamVLN 用的 LLaVA-Video 就是。</td></tr>
+        <tr><td><b>Prefill</b></td><td>预填充。模型把整段输入先「读一遍」并算好中间状态，是最耗时的阶段。</td></tr>
+        <tr><td><b>Decode</b></td><td>解码。模型一个一个往外吐字，每吐一个都要查前面的缓存。</td></tr>
+        <tr><td><b>KV Cache</b></td><td>把 prefill 算出的 Key/Value 存起来复用，避免重复计算。省时间但吃显存。</td></tr>
+        <tr><td><b>滑动窗口</b></td><td>只保留最近 N 轮上下文，旧的移出去。保证长度恒定。</td></tr>
+        <tr><td><b>Token 剪枝</b></td><td>从一堆 token 里挑一部分保留，其余丢掉。注意是「挑」不是「改」。</td></tr>
+        <tr><td><b>体素 / Voxel</b></td><td>三维空间里的小立方格，相当于 3D 版的像素。</td></tr>
+        <tr><td><b>反投影</b></td><td>用深度和相机参数，把 2D 图像上的点还原到 3D 空间中的位置。</td></tr>
+        <tr><td><b>DAgger</b></td><td>一种训练技巧：让模型自己走，专家在旁边纠正错误，把纠正样本加入训练集。</td></tr>
+        <tr><td><b>Oracle 轨迹</b></td><td>专家示范，也就是标准答案路径。不是「神谕」，就是人走的最优路线。</td></tr>
+        <tr><td><b>Action Chunking</b></td><td>一次预测多个连续动作再一起执行，让动作更连贯、推理更省。</td></tr>
+        <tr><td><b>Habitat</b></td><td>Meta 开源的室内仿真平台。VLN-CE 的标准测试环境。</td></tr>
+        <tr><td><b>Matterport3D / HM3D</b></td><td>两套真实房屋的 3D 扫描数据集，分别是 90 个和上千个场景。</td></tr>
+        <tr><td><b>R2R / RxR</b></td><td>两个导航指令数据集。R2R 短指令（约 29 词），RxR 长指令且多语言。</td></tr>
+        <tr><td><b>SR / SPL</b></td><td>成功率 / 带路径加权的成功率。后者会惩罚绕路。</td></tr>
+        <tr><td><b>Egocentric</b></td><td>第一人称视角。机器人看到的就是它自己眼睛看到的。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>参考资料</h3>
+
+  <ul class="refs">
+    <li>论文：<a href="https://arxiv.org/abs/2507.05240" target="_blank" rel="noopener">StreamVLN: Streaming Vision-and-Language Navigation via SlowFast Context Modeling</a>（arXiv:2507.05240，ICRA 2026）</li>
+    <li>项目主页（含演示视频）：<a href="https://streamvln.github.io/" target="_blank" rel="noopener">streamvln.github.io</a></li>
+    <li>代码仓库：<a href="https://github.com/OpenRobotLab/StreamVLN" target="_blank" rel="noopener">github.com/OpenRobotLab/StreamVLN</a></li>
+    <li>模型权重：<a href="https://huggingface.co/mengwei0427/StreamVLN_Video_qwen_1_5_r2r_rxr_envdrop_scalevln" target="_blank" rel="noopener">Hugging Face · StreamVLN</a></li>
+    <li>基础知识补充：<a href="https://arxiv.org/abs/2004.00867" target="_blank" rel="noopener">Beyond the Nav-Graph: Vision-and-Language Navigation in Continuous Environments</a>（VLN-CE 原始论文）</li>
+  </ul>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <div class="fin">
+    <h6>写在最后</h6>
+    <p>
+      这份文档是一个学习笔记，不是官方材料。所有数字以论文与官方仓库为准；其中「论文没写、代码里能看到」的部分，我都单独标注了出处，方便你核实。
+    </p>
+    <p>
+      如果只能带走一句话：<strong style="color:#e6dfcd">StreamVLN 的聪明之处不在于让模型更聪明，而在于让它「忘得聪明」。</strong>
+    </p>
+    <p style="margin-top:22px;font-size:12px;color:#6f8178">整理于 2026-10-25 · 基于 arXiv v2 与仓库 main 分支</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var map = {};
+  links.forEach(function(a){
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if(el) map[id] = a;
+  });
+  var current = null;
+  function onScroll(){
+    var best = null, bestTop = -Infinity;
+    Object.keys(map).forEach(function(id){
+      var el = document.getElementById(id);
+      var top = el.getBoundingClientRect().top;
+      if(top < 120 && top > bestTop){ bestTop = top; best = id; }
+    });
+    if(best && best !== current){
+      if(current) map[current].classList.remove('active');
+      map[best].classList.add('active');
+      current = best;
+    }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>
