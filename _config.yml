@@ -28,6 +28,7 @@ owner:
 # ---------- 导航 ----------
 nav:
   - { name: 首页, url: "/" }
+  - { name: 导航, url: "/links/" }
   - { name: 归档, url: "/archive/" }
   - { name: 标签, url: "/tags/" }
   - { name: 实验室, url: "/lab/" }
