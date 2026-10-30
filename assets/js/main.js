@@ -673,6 +673,7 @@
 
     var PAGES = [
       { title: '首页', url: '/', hint: '首页' },
+      { title: '星星导航', url: '/links/', hint: '常用站点收藏' },
       { title: '归档', url: '/archive/', hint: '全部文章' },
       { title: '标签', url: '/tags/', hint: '按主题浏览' },
       { title: '数据统计', url: '/stats/', hint: '热力图与产量' },
@@ -683,7 +684,7 @@
       { title: '友链', url: '/friends/', hint: '朋友们' },
       { title: '书单', url: '/books/', hint: '在读与想读' },
       { title: '时间线', url: '/timeline/', hint: '生活碎片' },
-      { title: '站点导航', url: '/nav/', hint: '全站目录' },
+      { title: '全站目录', url: '/nav/', hint: '页面与文章索引' },
       { title: '搜索', url: '/search/', hint: '全文检索' }
     ];
 
