@@ -24,7 +24,9 @@ permalink: /links/
         <span class="dot"></span>
         <span><b>{{ site.data.navs.groups.size }}</b> 个分类</span>
         <span class="dot"></span>
-        <span>支持搜索 / 收藏 / 键盘操作</span>
+        <span>已收藏 <b id="navs-fav-n">0</b> 个</span>
+        <span class="dot"></span>
+        <span>搜索 / 右键菜单 / 键盘操作</span>
       </div>
     </header>
 
@@ -48,7 +50,6 @@ permalink: /links/
       {% for g in site.data.navs.groups %}
       <button class="navs-chip" type="button" data-group="{{ g.id }}" role="tab" aria-selected="false">{{ g.name }} <em>{{ g.items.size }}</em></button>
       {% endfor %}
-      <button class="navs-chip navs-chip-fav" type="button" data-group="fav" role="tab" aria-selected="false">★ 收藏 <em id="navs-fav-n">0</em></button>
     </div>
 
     <div class="navs-recent" id="navs-recent" hidden>
@@ -57,6 +58,14 @@ permalink: /links/
     </div>
 
     <p class="navs-count" id="navs-count" hidden></p>
+
+    <section class="navs-group navs-favsec" id="navs-favsec" hidden>
+      <div class="ng-head">
+        <h2><span class="ng-dot" aria-hidden="true"></span><span class="ng-heart">♥</span>我的收藏</h2>
+        <span class="ng-desc" id="navs-fav-desc"></span>
+      </div>
+      <div class="navs-grid" id="navs-fav-grid"></div>
+    </section>
 
     {% for g in site.data.navs.groups %}
     <section class="navs-group" data-group="{{ g.id }}">
@@ -107,10 +116,28 @@ permalink: /links/
         <kbd>↑↓←→</kbd> 移动
         <kbd>Enter</kbd> 打开
         <kbd>Esc</kbd> 清空
+        <kbd>右键</kbd> 收藏 / 复制链接
       </p>
     </footer>
 
   </div>
 </div>
+
+<div class="navs-menu" id="navs-menu" role="menu" aria-label="站点操作" hidden>
+  <button class="nm-item" type="button" role="menuitem" data-act="open">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5h6v6"/><path d="M19 5l-8 8"/><path d="M19 14v4a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18V7a1.5 1.5 0 0 1 1.5-1.5H10"/></svg>
+    <span class="nm-label">打开</span>
+  </button>
+  <button class="nm-item" type="button" role="menuitem" data-act="fav">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2c-1-.7-7.2-4.9-7.2-9.7A4.1 4.1 0 0 1 12 7.6a4.1 4.1 0 0 1 7.2 2.9c0 4.8-6.2 9-7.2 9.7z"/></svg>
+    <span class="nm-label">添加收藏</span>
+  </button>
+  <button class="nm-item" type="button" role="menuitem" data-act="copy">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.2"/><path d="M15 6.2A1.2 1.2 0 0 0 13.8 5H5.2A1.2 1.2 0 0 0 4 6.2v8.6A1.2 1.2 0 0 0 5.2 16"/></svg>
+    <span class="nm-label">复制链接</span>
+  </button>
+</div>
+
+<p class="navs-toast" id="navs-toast" role="status" aria-live="polite" hidden></p>
 
 <script src="{{ '/assets/js/links.js' | relative_url }}" defer></script>

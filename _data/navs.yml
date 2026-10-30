@@ -3,6 +3,8 @@
 #   icon  ：图标图片（assets/img/navs/ 下），有图优先用图
 #   emoji ：没有图片时用的表情
 #   mark  ：兜底文字标（图片加载失败 / emoji 不显示时自动顶上）
+# 注意：能走 https 的站优先写 https（canvas / 宿舍购电 / AI 平台 / 超星 已校验证书可用）；
+#       校内其余站点只支持 http，浏览器会提示不安全，属正常
 
 meta:
   title: 星星导航
@@ -20,7 +22,7 @@ groups:
         mark: "1"
       - title: "canvas"
         desc: "课程公告、作业"
-        url: "http://canvas.tongji.edu.cn/"
+        url: "https://canvas.tongji.edu.cn/"
         icon: "/assets/img/navs/canvas.png"
         mark: "C"
       - title: "同济大学移动门户"
@@ -30,12 +32,12 @@ groups:
         mark: "门户"
       - title: "宿舍购电"
         desc: "交电费、查余额"
-        url: "http://goudian.tongji.edu.cn/"
+        url: "https://goudian.tongji.edu.cn/"
         emoji: "⚡"
         mark: "电"
       - title: "同济AI应用创新平台"
         desc: "可以使用和创建各类智能体"
-        url: "http://agent.tongji.edu.cn/"
+        url: "https://agent.tongji.edu.cn/"
         emoji: "⭐"
         mark: "AI"
       - title: "一网通办"
@@ -150,7 +152,7 @@ groups:
         mark: "M"
       - title: "超星学习通"
         desc: "学习通"
-        url: "http://www.chaoxing.com/"
+        url: "https://www.chaoxing.com/"
         icon: "/assets/img/navs/cx.png"
         mark: "超星"
       - title: "智慧树"
