@@ -1,0 +1,6 @@
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="8" cy="8" r="7.5" fill="#1e40af" stroke="#ffffff" stroke-width="0.5"/>
+  <circle cx="8" cy="8" r="6" fill="none" stroke="#ffffff" stroke-width="0.3"/>
+  <text x="8" y="10.5" text-anchor="middle" fill="#ffffff" font-size="4" font-weight="bold" font-family="serif">同济</text>
+  <text x="8" y="5.5" text-anchor="middle" fill="#ffffff" font-size="2.5" font-family="serif">1907</text>
+</svg>
