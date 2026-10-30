@@ -486,6 +486,10 @@
   border: 1px solid var(--border-soft);
 }
 .nf-keys { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nf-note {
+  font-size: 11px;
+  opacity: .72;
+}
 
 /* ---------- 响应式 ---------- */
 @media (max-width: 720px) {
