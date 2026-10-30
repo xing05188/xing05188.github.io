@@ -72,7 +72,7 @@
     recent.unshift({
       name: card.dataset.name,
       url: url,
-      mark: (($('.nc-ico', card) || {}).textContent || '').trim()
+      mark: card.dataset.mark || '✦'
     });
     recent = recent.slice(0, 6);
     write(KEY_RECENT, recent);
@@ -317,6 +317,14 @@
 
     paintStars();
     paintRecent();
+
+    // 图标兜底：图片加载失败就退回文字标 / emoji
+    $$('.nc-ico.has-img img').forEach(function (img) {
+      var box = img.closest('.nc-ico');
+      function fallback() { if (box) box.classList.remove('has-img'); }
+      img.addEventListener('error', fallback);
+      if (img.complete && img.naturalWidth === 0) fallback();
+    });
 
     // 简介：默认开；读过存档就按存档
     var d = read(KEY_DESC, 1);

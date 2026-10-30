@@ -361,6 +361,37 @@
 }
 .nav-card:hover .nc-ico { transform: scale(1.06) rotate(-3deg); }
 
+/* 三层图标：图片 > emoji > 文字标（图片挂掉自动退回文字） */
+.nc-ico img {
+  display: none;
+  width: 26px; height: 26px;
+  object-fit: contain;
+}
+.nc-ico.has-img {
+  background: transparent;
+  border-color: transparent;
+}
+.nc-ico.has-img img { display: block; }
+
+.nc-ico .nc-mark,
+.nc-ico .nc-emoji {
+  display: none;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+.nc-ico.has-emoji .nc-emoji {
+  display: block;
+  font-size: 17px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "EmojiOne Color", sans-serif;
+  font-weight: 400;
+}
+.nc-ico:not(.has-img):not(.has-emoji) .nc-mark { display: block; }
+
+/* GitHub 图标本身是纯白（原站深色主题用），亮色主题下反相才看得见 */
+.nc-ico img[src*="github.svg"] { filter: invert(1) brightness(.2); }
+[data-theme="dark"] .nc-ico img[src*="github.svg"] { filter: none; }
+
 /* 文字标按长度分级：1 字最大，4 字最小 */
 .nc-ico.m1 { font-size: 16px; }
 .nc-ico.m2 { font-size: 11.5px; }

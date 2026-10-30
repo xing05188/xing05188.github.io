@@ -67,10 +67,15 @@ permalink: /links/
       <div class="navs-grid">
         {% for it in g.items %}
         {% assign host = it.url | remove: "https://" | remove: "http://" | split: "/" | first %}
+        {% assign msize = it.mark.size %}
         <a class="nav-card" href="{{ it.url }}" target="_blank" rel="noopener noreferrer"
            data-title="{{ it.title | downcase }}" data-desc="{{ it.desc | downcase }}" data-host="{{ host }}"
-           data-name="{{ it.title }}" data-url="{{ it.url }}">
-          <span class="nc-ico {% if it.mark.size >= 4 %}m4{% elsif it.mark.size == 3 %}m3{% elsif it.mark.size == 2 %}m2{% else %}m1{% endif %}" aria-hidden="true">{{ it.mark }}</span>
+           data-name="{{ it.title }}" data-url="{{ it.url }}" data-mark="{{ it.mark }}">
+          <span class="nc-ico {% if msize >= 4 %}m4{% elsif msize == 3 %}m3{% elsif msize == 2 %}m2{% else %}m1{% endif %}{% if it.icon %} has-img{% endif %}{% if it.emoji %} has-emoji{% endif %}" aria-hidden="true">
+            {% if it.icon %}<img src="{{ it.icon | relative_url }}" alt="" width="26" height="26" loading="lazy" decoding="async">{% endif %}
+            {% if it.emoji %}<em class="nc-emoji">{{ it.emoji }}</em>{% endif %}
+            <b class="nc-mark">{{ it.mark }}</b>
+          </span>
           <span class="nc-body">
             <b class="nc-title">{{ it.title }}</b>
             <small class="nc-desc">{{ it.desc }}</small>
