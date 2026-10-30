@@ -31,6 +31,7 @@ nav:
   - { name: 导航, url: "/links/" }
   - { name: 归档, url: "/archive/" }
   - { name: 标签, url: "/tags/" }
+  - { name: 系列, url: "/series/" }
   - { name: 实验室, url: "/lab/" }
   - { name: 书单, url: "/books/" }
   - { name: 友链, url: "/friends/" }
@@ -39,6 +40,18 @@ nav:
   - { name: 留言, url: "/guestbook/" }
   - { name: 工作台, url: "/workbench/" }
   - { name: 关于, url: "/about/" }
+  # 以上是横向导航；一行放不下时，靠后的会自动收进末尾「更多」。
+  # 下面带 more: true 的项默认就放在「更多」里（不占横向位置）。
+  - { name: 搜索, url: "/search/", more: true, group: 页面 }
+  - { name: 全站目录, url: "/nav/", more: true, group: 页面 }
+  - { name: 爱心动画, url: "/lab/love.html", more: true, group: 实验室 }
+  - { name: 爱心动画 · 其二, url: "/lab/love1.html", more: true, group: 实验室 }
+  - { name: PDF 阅读器, url: "/lab/pdf-viewer.html", more: true, group: 实验室 }
+  - { name: 鹈鹕骑自行车, url: "/lab/pelican.html", more: true, group: 实验室 }
+  - { name: 林间小屋, url: "/lab/cabin.html", more: true, group: 实验室 }
+  - { name: 文韵山河, url: "/lab/wenyun_shanhe.html", more: true, group: 实验室 }
+  - { name: 三维校园, url: "/lab/jxstnu.html", more: true, group: 实验室 }
+  - { name: VLN-CE 资料库, url: "/lab/vln.html", more: true, group: 实验室 }
 
 # ---------- 文章链接格式 ----------
 permalink: /posts/:title/

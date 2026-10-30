@@ -228,6 +228,18 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
 .notice-close:hover { background: rgba(255, 255, 255, .34); }
 .notice-close svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
 
+/* 小屏：公告最多两行，避免文字溢出被裁 */
+@media (max-width: 640px) {
+  .notice-inner { gap: 8px; padding-block: 7px; }
+  .notice-text {
+    max-height: 3em;      /* 行高 1.5 × 2 行 */
+    overflow: hidden;
+    font-size: .8rem;
+    line-height: 1.5;
+  }
+  .notice-link { font-size: .8rem; }
+}
+
 /* ============================================================
    顶部导航
    ============================================================ */
@@ -258,6 +270,8 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  flex: none;
+  white-space: nowrap;
   color: var(--text);
   font-weight: 700;
   font-size: 1.06rem;
@@ -318,8 +332,134 @@ main { flex: 1 0 auto; position: relative; z-index: 2; }
   color: var(--gold);
 }
 
+/* ---------- 末尾「更多」折叠 ---------- */
+.nav-links { min-width: 0; overflow: hidden; }
+.nav-links > li { flex: none; }
+.nav-links > li > a,
+.nav-more-btn { white-space: nowrap; }
+
+.nav-more { position: relative; }
+.nav-more[hidden] { display: none; }
+
+.nav-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 11px 7px 13px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: .94rem;
+  font-weight: 500;
+  line-height: inherit;
+  cursor: pointer;
+  transition: color .2s var(--ease), background .2s var(--ease);
+}
+.nav-more-btn:hover,
+.nav-more[data-open="true"] .nav-more-btn { color: var(--text); background: var(--bg-soft); }
+.nav-more-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.nav-more-btn .nm-caret {
+  width: 12px; height: 12px;
+  fill: none; stroke: currentColor; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .24s var(--ease);
+}
+.nav-more[data-open="true"] .nav-more-btn .nm-caret { transform: rotate(180deg); }
+
+/* 当前页在面板里时，按钮本身也高亮，并点一个小圆点示意 */
+.nav-more.has-active .nav-more-btn { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.nav-more-btn .nm-dot {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  transform: scale(.4);
+  transition: all .22s var(--ease);
+}
+.nav-more.has-active .nav-more-btn .nm-dot { opacity: 1; transform: none; }
+
+/* 面板：fixed 定位（由 JS 贴按钮右下角摆放），避免被 .nav-links 的 overflow 裁切 */
+.nav-more-panel {
+  position: fixed;
+  z-index: 920;
+  width: 344px;
+  max-width: calc(100vw - 20px);
+  max-height: min(72vh, 540px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 9px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-7px) scale(.985);
+  transform-origin: top right;
+  /* 关闭时等淡出结束再隐藏；打开时 visibility 立即生效，保证首帧就能聚焦 */
+  transition: opacity .18s var(--ease), transform .18s var(--ease), visibility 0s .2s;
+}
+.nav-more[data-open="true"] .nav-more-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity .18s var(--ease), transform .18s var(--ease), visibility 0s;
+}
+
+.nmp-sec + .nmp-sec {
+  margin-top: 5px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--border);
+}
+.nmp-sec[hidden] { display: none; }
+.nmp-label {
+  padding: 4px 10px 5px;
+  font-size: .7rem;
+  letter-spacing: .09em;
+  color: var(--text-mute);
+  text-transform: uppercase;
+}
+.nmp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px 3px;
+}
+.nmp-grid--one { grid-template-columns: 1fr; }
+.nmp-item {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 9px;
+  color: var(--text-soft);
+  font-size: .9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color .16s var(--ease), background .16s var(--ease);
+}
+.nmp-item:hover,
+.nmp-item:focus-visible {
+  color: var(--text);
+  background: var(--bg-soft);
+  outline: none;
+}
+.nmp-item.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+@media (max-width: 860px) {
+  .nav-links { overflow: visible; }
+  .nav-more { display: none; }
+}
+
 /* 导航右侧工具 */
-.nav-tools { display: flex; align-items: center; gap: 6px; }
+.nav-tools { display: flex; align-items: center; gap: 6px; flex: none; }
 
 .icon-btn {
   width: 36px;

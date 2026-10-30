@@ -153,12 +153,197 @@
     }
 
     var here = location.pathname.replace(/\/$/, '') || '/';
+    var best = null, bestLen = -1;
     $$('.nav-links a').forEach(function (a) {
-      var href = a.getAttribute('href').replace(/\/$/, '') || '/';
-      if (href === here || (href !== '/' && here.indexOf(href) === 0)) {
-        a.classList.add('active');
+      var href = (a.getAttribute('href') || '').replace(/\/$/, '') || '/';
+      a.classList.remove('active');
+      if (href === here) {
+        if (here.length >= bestLen) { best = a; bestLen = here.length; }
+      } else if (href !== '/' && here.indexOf(href + '/') === 0) {
+        // 父级页面：只在没有更精确匹配时生效（越长的前缀越优先）
+        if (href.length > bestLen) { best = a; bestLen = href.length; }
       }
     });
+    if (best) best.classList.add('active');
+  })();
+
+  /* ==========================================================
+     3.5 导航「更多」：横向放不下的入口自动收进末尾下拉
+     ========================================================== */
+  (function initNavMore() {
+    var ul = $('#nav-links');
+    var more = $('#nav-more');
+    if (!ul || !more) return;
+    var nav = ul.parentNode;
+    var btn = $('#nav-more-btn');
+    var panel = $('#nav-more-panel');
+    var ovfSec = $('#nmp-overflow');
+    var ovfGrid = ovfSec ? ovfSec.querySelector('.nmp-grid') : null;
+    if (!btn || !panel || !ovfGrid) return;
+
+    var DESKTOP = 861;                 // 与 CSS 的移动端断点一致
+    var GAP = 4;                       // .nav-links 内部 gap
+    var origin = $$('.nav-item', ul);  // 原始的横向导航项
+    var isDesktop = function () { return window.innerWidth >= DESKTOP; };
+
+    function close(returnFocus) {
+      if (more.getAttribute('data-open') !== 'true') return;
+      more.setAttribute('data-open', 'false');
+      btn.setAttribute('aria-expanded', 'false');
+      if (returnFocus) btn.focus({ preventScroll: true });
+    }
+
+    function open() {
+      if (more.hidden) return;
+      if (more.getAttribute('data-open') === 'true') return;
+      more.setAttribute('data-open', 'true');
+      btn.setAttribute('aria-expanded', 'true');
+      place();
+    }
+
+    function visItems() {
+      // 用 offsetWidth 判断：面板淡入过程中 visibility 仍是 hidden，
+      // 但布局已存在，这样刚展开就能聚焦首项
+      return $$('.nmp-item', panel).filter(function (el) { return el.offsetWidth > 0; });
+    }
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      var pw = panel.offsetWidth, ph = panel.offsetHeight;
+      var pad = 10;
+      var left = r.right - pw;
+      left = Math.max(pad, Math.min(left, window.innerWidth - pw - pad));
+      var top = r.bottom + 8;
+      if (top + ph > window.innerHeight - pad) {
+        var above = r.top - 8 - ph;
+        top = above > pad ? above : Math.max(pad, window.innerHeight - ph - pad);
+      }
+      panel.style.left = Math.round(left) + 'px';
+      panel.style.top = Math.round(top) + 'px';
+    }
+
+    function reset() {
+      close(false);
+      origin.forEach(function (li) { li.hidden = false; });
+      ovfGrid.innerHTML = '';
+      ovfSec.hidden = true;
+      more.hidden = !isDesktop();
+    }
+
+    function layout() {
+      if (!isDesktop()) { reset(); return; }
+
+      // 先还原成「全部横向排列」再测量
+      origin.forEach(function (li) { li.hidden = false; });
+      ovfGrid.innerHTML = '';
+      ovfSec.hidden = true;
+      more.hidden = false;
+
+      var navRect = nav.getBoundingClientRect();
+      var tools = $('.nav-tools', nav);
+      var gap = parseFloat(window.getComputedStyle(nav).columnGap) || 20;
+      // 可用宽度 = 列表左边界 → 右侧工具组左边界，再留一个 gap 和一个像素余量
+      var ulLeft = ul.getBoundingClientRect().left;
+      var toolsLeft = tools ? tools.getBoundingClientRect().left : navRect.right;
+      var avail = toolsLeft - ulLeft - gap - 1;
+      if (avail <= 0) avail = 0;
+
+      // 「更多」按钮本身也要占位置
+      var moreW = more.getBoundingClientRect().width + GAP;
+      var budget = Math.max(0, avail - moreW);
+
+      var acc = 0, keep = origin.length;
+      for (var i = 0; i < origin.length; i++) {
+        var w = origin[i].getBoundingClientRect().width + (i ? GAP : 0);
+        if (acc + w > budget) { keep = i; break; }
+        acc += w;
+      }
+
+      var moved = origin.slice(keep);
+      moved.forEach(function (li) {
+        var a = li.querySelector('a');
+        if (!a) return;
+        var clone = doc.createElement('a');
+        clone.className = 'nmp-item' + (a.classList.contains('active') ? ' active' : '');
+        clone.setAttribute('role', 'menuitem');
+        clone.setAttribute('href', a.getAttribute('href'));
+        clone.textContent = a.textContent.trim();
+        if (a.title) clone.title = a.title;
+        ovfGrid.appendChild(clone);
+        li.hidden = true;
+      });
+      ovfSec.hidden = moved.length === 0;
+      ovfGrid.classList.toggle('nmp-grid--one', moved.length <= 3);
+
+      more.classList.toggle('has-active', !!panel.querySelector('.nmp-item.active'));
+    }
+
+    /* --- 事件 --- */
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (more.getAttribute('data-open') === 'true') close(false);
+      else open();
+    });
+
+    btn.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          open();
+          var list = visItems();
+          if (list[0]) list[0].focus();
+        }
+      }
+    });
+
+    panel.addEventListener('keydown', function (e) {
+      var list = visItems();
+      var i = list.indexOf(doc.activeElement);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        (list[i + 1] || list[0] || btn).focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (i <= 0) btn.focus(); else list[i - 1].focus();
+      } else if (e.key === 'Home') {
+        e.preventDefault(); if (list[0]) list[0].focus();
+      } else if (e.key === 'End') {
+        e.preventDefault(); if (list.length) list[list.length - 1].focus();
+      } else if (e.key === 'Escape') {
+        e.preventDefault(); close(true);
+      } else if (e.key === 'Tab') {
+        close(false);
+      }
+    });
+
+    panel.addEventListener('click', function (e) {
+      if (e.target.closest('.nmp-item')) close(false);
+    });
+
+    doc.addEventListener('click', function (e) {
+      if (!more.contains(e.target)) close(false);
+    });
+
+    doc.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close(false);
+    });
+
+    window.addEventListener('scroll', function () { close(false); }, { passive: true });
+
+    var raf = 0;
+    window.addEventListener('resize', function () {
+      if (raf) return;
+      raf = window.requestAnimationFrame(function () {
+        raf = 0;
+        layout();
+      });
+    });
+
+    layout();
+    if (doc.fonts && doc.fonts.ready && doc.fonts.ready.then) {
+      doc.fonts.ready.then(function () { layout(); });
+    }
+    window.addEventListener('load', layout);
   })();
 
   /* ==========================================================
